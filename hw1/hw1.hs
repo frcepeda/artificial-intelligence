@@ -54,8 +54,7 @@ main = do
                ,("Tree"               , show . toTree)
                ,("Depth"              , show . depth . toTree)
                ,("Degree"             , show . degree . toTree)
-               ,("Flattened by levels", ('\n':) . concat
-                                                . intersperse "\n"
+               ,("Flattened by levels", ('\n':) . intercalate "\n"
                                                 . map show
                                                 . byLevels
                                                 . toTree)]
