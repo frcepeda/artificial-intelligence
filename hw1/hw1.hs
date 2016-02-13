@@ -21,6 +21,7 @@ instance Show a => Show (Tree a) where
 reverse' (L l) = L (reverse' <$> reverse l)
 reverse' x = x
 
+toTree (L [E r]) = r :# []
 toTree (L [E r, L ch]) = r :# go ch
     where go ((E x):(L ch):xs) = (x :# go ch) : go xs
           go ((E x):xs) = (x :# []) : go xs
