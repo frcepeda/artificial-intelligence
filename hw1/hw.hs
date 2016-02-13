@@ -1,4 +1,5 @@
 import Control.Monad
+import Control.Applicative
 import Data.List
 
 data List a = E a
