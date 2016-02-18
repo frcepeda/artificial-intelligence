@@ -10,7 +10,7 @@ function setup(n, perm){
 	if (perm === undefined){
 		perm = [];
 		for (var i = 0; i < n*n; i++)
-			perm.push(i+1);
+			perm.push(i);
 	}
 
 	self.nextStep = 0;
@@ -25,7 +25,7 @@ function setup(n, perm){
 	self.pos = {};
 	self.cells = {};
 
-	for (var i = 1; i <= n*n; i++){
+	for (var i = 0; i < n*n; i++){
 		self.cells[i] = $("<div></div>",
 				 { class: "cell",
 				   text: i});
@@ -44,20 +44,20 @@ function setup(n, perm){
 		self.cells[pi].css(self.pos[pi]);
 	}
 
-	self.cells[n*n].css("display", "none");
+	self.cells[0].css("display", "none");
 
 	self.move = function(id, callback){
-		var tmp = self.pos[n*n];
-		self.pos[n*n] = self.pos[id];
+		var tmp = self.pos[0];
+		self.pos[0] = self.pos[id];
 		self.pos[id] = tmp;
 
 		var iinv = self.inv[id]
-		var ninv = self.inv[n*n];
+		var zinv = self.inv[0];
 
-		self.perm[iinv] = n*n;
-		self.perm[ninv] = id;
-		self.inv[n*n] = iinv;
-		self.inv[id] = ninv;
+		self.perm[iinv] = 0;
+		self.perm[zinv] = id;
+		self.inv[0] = iinv;
+		self.inv[id] = zinv;
 
 		self.cells[id].animate(
 			self.pos[id],
@@ -158,9 +158,9 @@ $(function (){
 		}
 	});
 
-	var currentGame = setup(3, [2,3,9,1,4,6,7,5,8]);
+	var currentGame = setup(3);
 
-	currentGame.sequence([3,2,1,4,5,8]);
+	currentGame.sequence([1,2,5,5,2,1]);
 
 	$('#message').text('Ready.');
 });
