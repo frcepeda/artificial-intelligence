@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+		<script type="text/javascript" src="js/jquery-1.12.0.js"></script>
+		<script type="text/javascript" src="js/puzzle.js"></script>
+
+		<title>n-puzzle</title>
+	</head>
+
+	<body>
+		<div>
+			<form id="permutation-form">
+				<input type="text"
+				       id="permutation"
+				       value="[1,2,3,4,5,6,7,8,9]" />
+
+				<input type="submit"
+				       id="load"
+				       value="Load Permutation" />
+			</form>
+		</div>
+
+		<div>
+			<form>
+				<input type="button"
+				       id="solve"
+				       value="Solve" />
+
+				<input type="button"
+				       id="step"
+				       value="Step" />
+
+				<input type="button"
+				       id ="allSteps"
+				       value="All Steps" />
+
+				<input type="button"
+				       id ="reset"
+				       value="Reset" />
+			</form>
+		</div>
+
+		<div>
+			<p id="message"></p>
+		</div>
+
+		<div>
+			<div id="puzzle">
+				<div id="puzzle-wrapper" class="wrapper">
+				</div>
+			</div>
+		</div>
+	</body>
+
+</html>
