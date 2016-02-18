@@ -16,12 +16,13 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+  ghc-options:         -O2
   build-depends:       base >= 4.7 && < 5, vector, pqueue,
                        transformers, containers
 
 executable npuzzle-exe
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base, npuzzle, wai, warp, http-types,
                        bytestring, aeson

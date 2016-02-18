@@ -57,12 +57,11 @@ aStar n start goal = evalState aStar' (S.empty, (P.singleton (0,[],start)))
                        put (newVis, newQueue)
 
                        if x == goal
-                       then return $ Just (reverse p)
-                       else do forM_ (moves n x) $ \(m, next) -> do
+                         then return $ Just (reverse p)
+                         else do forM_ (moves n x) $ \(m, next) -> do
                                      unless (next `S.member` newVis) $ do 
                                           modify (mapSnd $ P.insert (c+1, m:p, next))
-                               aStar'
-          aStar' :: AStar (Maybe [Int])
+                                 aStar'
 
 mapSnd f (a,b) = (a,f b)
 stuff = solvePuzzle 2 [1,3,2,0]
