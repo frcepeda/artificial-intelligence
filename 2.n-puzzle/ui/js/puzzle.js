@@ -104,6 +104,7 @@ $(function (){
 		var n = Math.round(Math.sqrt(perm.length));
 		currentGame = setup(n, perm);
 		currentGame.solvable = undefined;
+		firstRun = false;
 		$("#message").text('Ready.');
 		return false;
 	});
