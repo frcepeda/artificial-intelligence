@@ -1,8 +1,8 @@
 module Lib
     ( solvePuzzle
-    , stuff
     ) where
 
+import Utils
 import Data.Bits
 import Data.List
 import Data.Maybe
@@ -62,6 +62,3 @@ aStar n start goal = evalState aStar' (S.empty, (P.singleton (0,[],start)))
                                      unless (next `S.member` newVis) $ do 
                                           modify (mapSnd $ P.insert (c+1, m:p, next))
                                  aStar'
-
-mapSnd f (a,b) = (a,f b)
-stuff = solvePuzzle 2 [1,3,2,0]
