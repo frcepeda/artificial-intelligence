@@ -18,11 +18,18 @@ library
   exposed-modules:     Lib
   ghc-options:         -O2
   build-depends:       base >= 4.7 && < 5, vector, pqueue,
-                       transformers, containers
+                       transformers, containers, primitive
 
 executable npuzzle-exe
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base, npuzzle, wai, warp, http-types,
-                       bytestring, aeson
+                       bytestring, aeson, vector
+
+executable preprocessing
+  hs-source-dirs:      app
+  main-is:             Preprocess.hs
+  ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base, npuzzle, bytestring, binary, cereal,
+                       vector, cereal-vector

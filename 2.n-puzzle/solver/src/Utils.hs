@@ -1,5 +1,8 @@
 module Utils
-    ( mapSnd
+    ( factorial
+    , mapSnd
     ) where
 
-mapSnd f (a,b) = (a,f b)
+factorial n = product [1..n]
+
+mapSnd f (a,b) = (a, f b)
