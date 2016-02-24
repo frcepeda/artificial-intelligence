@@ -99,14 +99,33 @@ $(function (){
 	var currentGame = undefined;
 	var firstRun = true;
 
-	$("#permutation-form").submit(function(){
-		var perm = eval($("#permutation").val());
-		var n = Math.round(Math.sqrt(perm.length));
-		currentGame = setup(n, perm);
+	var loadPermutation = function(p){
+		$("#permutation").val(p);
+		var n = Math.round(Math.sqrt(p.length));
+		currentGame = setup(n, p);
 		currentGame.solvable = undefined;
 		firstRun = false;
 		$("#message").text('Ready.');
+	};
+
+	$("#permutation-form").submit(function(){
+		var perm = $("#permutation").val().split(',');
+		for (var i = 0; i < perm.length; i++)
+			perm[i] = parseInt(perm[i]);
+		loadPermutation(perm);
 		return false;
+	});
+
+	$("#random").click(function(){
+		var perm = [];
+		var n = 2 + Math.floor(Math.random()*3);
+		for (var i = 0; i < n*n; i++){
+			var r = Math.floor(Math.random() * (i+1));
+			perm.push(perm[r]);
+			perm[r] = i;
+		}
+		console.log(perm);
+		loadPermutation(perm);
 	});
 
 	$("#reset").click(function(){
