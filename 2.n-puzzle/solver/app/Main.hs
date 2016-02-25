@@ -47,14 +47,15 @@ main = do
     putStrLn "Loading Pattern Database..."
     db <- decodeWord8Vector <$> B.readFile "patternDB.bak"
     seq db $ putStrLn "Ready!"
-    runEnv 9592 (handler db)
+    let settings = (setPort 9592 . setTimeout 600) defaultSettings
+    runSettings settings (handler db)
 
 handler db req respond = do
     r <- catch (do
-                    body <- B.fromStrict <$> requestBody req
-                    let (Just puzzle) = decode body
-                    unless (token puzzle == "SEEKRITTOKEN") (throw ArgException)
-                    return $ solvePuzzle (size puzzle) (permutation puzzle) db)
+        body <- B.fromStrict <$> requestBody req
+        let (Just puzzle) = decode body
+        unless (token puzzle == "SEEKRITTOKEN") (throw ArgException)
+        return $ solvePuzzle (size puzzle) (permutation puzzle) db)
                (\(e :: ArgException) -> return Nothing)
     respond $ responseLBS status200 origin (encode . PuzzleSolution $ r)
         where origin = [("Access-Control-Allow-Origin", "*")]

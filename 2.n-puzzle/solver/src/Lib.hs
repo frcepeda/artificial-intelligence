@@ -6,14 +6,14 @@ module Lib
     ) where
 
 import Utils
+import qualified Queue as Q
 import Data.Bits
 import Data.List
 import Data.Maybe
 import Data.STRef
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as V
-import qualified Data.IntSet as S
-import qualified Data.IntMap.Strict as M
+import qualified Data.Set as S
 import qualified Data.PQueue.Min as P
 import Data.Word
 import Debug.Trace
@@ -23,95 +23,121 @@ import Control.Monad.Primitive
 import Control.Monad.ST
 import Control.Monad.Trans.State.Strict
 
-type Puzzle = Int -- Word64
+type Puzzle = Word64
 
 pprint n p = show $ map (map (numAt n p)) [[(i,j) | j <- [0..n-1]] | i <- [0..n-1]]
 
 toPuzzle :: [Int] -> Puzzle
 toPuzzle = foldr (\x r -> unsafeShiftL r 4 + fromIntegral x) 0
 
-{-# INLINE numAt #-}
-numAt n p (i,j) = (unsafeShiftR p (4*(n*i + j))) .&. mask
-    where mask = ((1 `unsafeShiftL` 4) - 1)
+mask = (1 `unsafeShiftL` 4) - 1
 
-{-# INLINE findElem #-}
-findElem n p e = head . filter ((== e) . numAt n p) $ indices
-    where indices = [(i,j) | i <- [0..n-1], j <- [0..n-1]]
+fromPuzzle n p = fp p (n*n)
+    where fp p 0 = []
+          fp p z = p .&. mask : fp (p `unsafeShiftR` 4) (z-1)
 
-moves :: Integral a => Int -> Puzzle -> [(a, Puzzle)]
-moves n p = catMaybes $ [swap] <*> deltas
-    where z@(zi,zj) = findElem n p 0
+--{-# INLINE numAt #-}
+numAt n p (i,j) = unsafeShiftR p (4*(n*i + j)) .&. mask
+
+--{-# INLINE findElem #-}
+findElem n p e = flip quotRem n . fromJust . elemIndex e $ p
+
+moves :: Int -> Puzzle -> [(Int, Puzzle)]
+moves n p = catMaybes $ swap <$> deltas
+    where perm = fromPuzzle n p
+          z@(zi,zj) = findElem n perm 0
           deltas = [(zi+1,zj), (zi-1,zj), (zi,zj+1), (zi,zj-1)]
           swap b@(bi,bj)
             | bi < 0 || bi >= n || bj < 0 || bj >= n = Nothing
             | otherwise = Just (fromIntegral num, bitSwap)
               where bitSwap = p `xor`
-                              (unsafeShiftL num (4*(zi*n+zj))) `xor`
-                              (unsafeShiftL num (4*(bi*n+bj)))
+                              unsafeShiftL num (4*(zi*n+zj)) `xor`
+                              unsafeShiftL num (4*(bi*n+bj))
                     num = numAt n p b
 
 solvePuzzle :: Int -> [Int] -> V.Vector Word8 -> Maybe [Int]
 solvePuzzle n xs db = do
-    guard $ sort xs == [0..n*n-1]
-    let h = if n < 4 then manhattanDist n else pCost db
+    let goal = [0..n*n-1]
+    guard $ sort xs == goal
+    guard $ parity n xs == parity n goal
+    let h = if n < 4 then manhattanDist n else fromIntegral . pCost db
     aStar n h (toPuzzle xs) (toPuzzle [0..n*n-1])
+
+parity n p = mod (r + c + p') 2
+    where (r,c) = findElem n p 0
+          (p',_) = foldr f (0,[]) p
+          f x (r,xs) = (r + (length . filter (> x)) xs, x:xs)
 
 manhattanDist n p = 0
 pCost db p = db V.! patternID p
 
-type AStar a = State (S.IntSet, P.MinQueue (Int, [Int], Puzzle)) a
+type AStar a = State (S.Set Int, P.MinQueue (Int, [Int], Puzzle)) a
 
-aStar :: Int -> Puzzle -> Puzzle -> Maybe [Int]
+aStar :: Int -> (Puzzle -> Int) -> Puzzle -> Puzzle -> Maybe [Int]
 aStar n h start goal = evalState aStar' (S.empty, P.singleton (0,[],start))
     where aStar' = do
             (vis, queue) <- get
             case P.minView queue of
-                Nothing -> return Nothing
-                (Just ((c,p,x), newQueue)) -> do
-                       let newVis = S.insert x vis
-                       put (newVis, newQueue)
+              Nothing -> return Nothing
+              (Just ((c,p,x), newQueue)) -> do
+                 let newVis = S.insert x vis
+                 put (newVis, newQueue)
 
-                       if x == goal
-                         then return $ Just (reverse p)
-                         else do forM_ (moves n x) $ \(m, next) -> do
-                                     unless (next `S.member` newVis) $ do
-                                          modify (mapSnd $ P.insert (c+1, m:p, next))
-                                 aStar'
+                 when (h x == 0) (traceShowM x)
 
-patternDB = bfs 4 (toPuzzle [0,1,1,3,1,1,1,7,1,1,1,11,12,13,14,15])
+                 if x == goal
+                   then return $ Just (reverse p)
+                   else do unless (x `S.member` vis) $
+                             forM_ (moves n x) $ \(m, next) ->
+                               unless (next `S.member` newVis) $
+                                 let newCost = c + 1 + h next in
+                                   (modify . mapSnd) $
+                                     P.insert (newCost, m:p, next)
+                           aStar'
+
+patternGoal = [0,1,1,3,1,1,1,7,1,1,1,11,12,13,14,15]
+patternDB = bfs 4 (toPuzzle patternGoal)
 
 dbSize = factorial 16 `div` factorial 8
 
 patternID :: Puzzle -> Int
-patternID p = permutationNumber (length nums) nums
+patternID p = permutationNumber 16 8 nums
     where markers = [0,3,7,11,12,13,14,15]
-          locs = map (findElem 4 p) markers
-          nums = map (\(r,c) -> r*4 + c) locs
+          nums = map
+                   (\i -> fromJust . elemIndex i . fromPuzzle 4 $ p)
+                   markers
 
-permutationNumber _ [] = 0
-permutationNumber n (x:xs) =
-    x * factorial n + permutationNumber (n-1) (shiftLess x xs)
-    where shiftLess x = map (\y -> if y < x then y else y-1)
+permutationNumber _ _ [] = 0
+permutationNumber n k (x:xs) =
+    this + permutationNumber (n-1) (k-1) (shiftLess x xs)
+    where this = (factorial (n-1) `div` factorial (n-1-(k-1))) * x
+          shiftLess x = map (\y -> if y < x then y else y-1)
 
 bfs :: Int -> Puzzle -> V.Vector Word8
 bfs n start = runST $ do
-    vis <- GM.new dbSize :: ST s (V.MVector (PrimState (ST s)) Bool)
     db <- GM.new dbSize
-    q <- newSTRef (P.singleton (0, start))
+    q <- Q.empty (div dbSize 3)
+    cnt <- newSTRef (0 :: Int)
+    Q.insert start q
     let bfs' = do
-         queue <- readSTRef q
-         case P.minView queue of
+         view <- Q.pop q
+         case view of
              Nothing -> return ()
-             (Just ((c,x), newQueue)) -> do
-                 writeSTRef q newQueue
-                 GM.write vis (patternID x) True
-                 GM.write db (patternID x) c
+             (Just x) -> do
+                 c <- GM.read db (patternID x)
+
+                 modifySTRef' cnt (+1)
+
+                 soFar <- readSTRef cnt
+                 when (mod soFar (10^3 :: Int) == 0) (traceShowM soFar)
 
                  forM_ (moves n x) $ \(m, next) -> do
-                     isMember <- GM.read vis (patternID next)
-                     unless isMember $ do 
-                         modifySTRef q (P.insert (c+1, next))
+                     d <- GM.read db (patternID next)
+                     when (d == 0) $ do
+                         GM.write db (patternID next) (c+1)
+                         Q.insert next q
 
-                 bfs'
+                 when (soFar < (10^6 :: Int)) bfs'
     bfs'
+    GM.write db (patternID start) 0
     V.freeze db
