@@ -3,6 +3,8 @@
 module Lib
     ( solvePuzzle
     , patternDB
+    , fringe
+    , corner
     ) where
 
 import Utils
@@ -32,10 +34,10 @@ toPuzzle = foldr (\x r -> unsafeShiftL r 4 + fromIntegral x) 0
 
 mask = (1 `unsafeShiftL` 4) - 1
 
---fromPuzzle :: Integral a => Int -> Puzzle -> [a]
+fromPuzzle :: Integral a => Int -> Puzzle -> [a]
 fromPuzzle n p = fp p (n*n)
     where fp p 0 = []
-          fp p z = p .&. mask : fp (p `unsafeShiftR` 4) (z-1)
+          fp p z = fromIntegral (p .&. mask) : fp (p `unsafeShiftR` 4) (z-1)
 
 {-# INLINE numAt #-}
 numAt n p (i,j) = unsafeShiftR p (4*(n*i + j)) .&. mask
@@ -56,12 +58,15 @@ moves n p = catMaybes $ swap <$> deltas
                               unsafeShiftL num (4*(bi*n+bj))
                     num = numAt n p b
 
-solvePuzzle :: Int -> [Int] -> V.Vector Word8 -> Maybe [Int]
-solvePuzzle n xs db = do
+solvePuzzle :: Int -> [Int] -> V.Vector Word8 -> V.Vector Word8 -> Maybe [Int]
+solvePuzzle n xs fdb cdb = do
     let goal = [0..n*n-1]
     guard $ sort xs == goal
     guard $ parity n xs == parity n goal
-    let h = if n < 4 then manhattanDist n else fromIntegral . pCost db
+    let h = if n < 4
+              then manhattanDist n
+              else \p -> fromIntegral $ max (pCost fringe fdb p)
+                                            (pCost corner cdb p)
     aStar n h (toPuzzle xs) (toPuzzle [0..n*n-1])
 
 parity n p = mod (r + c + p') 2
@@ -69,8 +74,13 @@ parity n p = mod (r + c + p') 2
           (p',_) = foldr f (0,[]) p
           f x (r,xs) = (r + (length . filter (> x)) xs, x:xs)
 
-manhattanDist n p = 0
-pCost db p = db V.! patternID p
+manhattanDist n p = sum deltas
+    where deltas = zipWith (\(a,b) (c,d) -> abs (a-c) + abs (b-d)) g c
+          g = [(r,c) | r <- [0..n-1], c <- [0..n-1]]
+          locs = indices [0..n-1] (fromPuzzle n p)
+          c = map (`quotRem` n) locs
+
+pCost g db p = db V.! patternID g p
 
 type AStar a = State (S.Set Int, P.MinQueue (Int, [Int], Puzzle)) a
 
@@ -96,50 +106,60 @@ aStar n h start goal = evalState aStar' (S.empty, P.singleton (0,[],start))
                                      P.insert (newCost, m:p, next)
                            aStar'
 
-patternGoal = [0,1,1,3,1,1,1,7,1,1,1,11,12,13,14,15]
-patternDB = bfs 4 (toPuzzle patternGoal)
+data GoalPattern = GoalPattern
+    { start :: [Int]
+    , markers :: [Int]
+    }
+
+fringe = GoalPattern
+    { start = [0,1,1,3,1,1,1,7,1,1,1,11,12,13,14,15]
+    , markers = [0,3,7,11,12,13,14,15]
+    }
+
+corner = GoalPattern
+    { start = [0,1,1,1,1,1,1,1,8,9,10,1,12,13,14,15]
+    , markers = [0,8,9,10,12,13,14,15]
+    }
 
 dbSize = factorial 16 `div` factorial 8
 
-patternID :: Puzzle -> Int
-patternID p = permutationNumber 16 8 nums
-    where markers = [0,3,7,11,12,13,14,15]
-          nums = map
-                   (\i -> fromJust . elemIndex i . fromPuzzle 4 $ p)
-                   markers
+patternDB g = bfs 4 g
 
-permutationNumber _ _ [] = 0
-permutationNumber n k (x:xs) =
-    this + permutationNumber (n-1) (k-1) (shiftLess x xs)
-    where this = (factorial (n-1) `div` factorial (n-1-(k-1))) * x
-          shiftLess x = map (\y -> if y < x then y else y-1)
+patternID :: GoalPattern -> Puzzle -> Int
+patternID g p = permutationNumber 16 8 nums
+    where perm = fromPuzzle 4 p
+          nums = indices (markers g) perm
 
-bfs :: Int -> Puzzle -> V.Vector Word8
-bfs n start = runST $ do
+bfs :: Int -> GoalPattern -> V.Vector Word8
+bfs n g = runST $ do
     db <- VM.new dbSize
-    q <- Q.empty (div dbSize 3)
+    q <- Q.empty (div dbSize 4)
     cnt <- newSTRef (0 :: Int)
-    Q.insert start q
+
+    let pID = patternID g
+
+    Q.insert (toPuzzle (start g)) q
+
     let bfs' = do
          view <- Q.pop q
          case view of
              Nothing -> return ()
              (Just x) -> do
-                 c <- VM.read db (patternID x)
+                 c <- VM.read db (pID x)
 
                  modifySTRef' cnt (+1)
-
                  soFar <- readSTRef cnt
                  when (mod soFar (10^5 :: Int) == 0) (traceShowM soFar)
 
                  forM_ (moves n x) $ \(_, next) -> do
-                     d <- VM.read db (patternID next)
+                     let nID = pID next
+                     d <- VM.read db nID
                      when (d == 0) $ do
-                         VM.write db (patternID next) (c+1)
+                         VM.write db nID (c+1)
                          Q.insert next q
 
-                 --when (soFar < (10^7 :: Int)) bfs'
                  bfs'
+
     bfs'
-    VM.write db (patternID start) 0
+    VM.write db (pID (toPuzzle (start g))) 0
     V.freeze db

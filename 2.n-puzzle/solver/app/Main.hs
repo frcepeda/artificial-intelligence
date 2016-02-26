@@ -42,17 +42,19 @@ instance ToJSON PuzzleSolution
 
 main = do
     putStrLn "Loading Pattern Database..."
-    db <- decodeWord8Vector <$> B.readFile "patternDB.bak"
-    seq db $ putStrLn "Ready!"
+    fdb <- decodeWord8Vector <$> B.readFile "fringeDB"
+    cdb <- decodeWord8Vector <$> B.readFile "cornerDB"
+    fdb `seq` putStrLn "Fringe ready!"
+    cdb `seq` putStrLn "Corner ready!"
     let settings = (setPort 9592 . setTimeout 600) defaultSettings
-    runSettings settings (handler db)
+    runSettings settings (handler fdb cdb)
 
-handler db req respond = do
+handler fdb cdb req respond = do
     r <- catch (do
         body <- B.fromStrict <$> requestBody req
         let (Just puzzle) = decode body
         unless (token puzzle == "SEEKRITTOKEN") (throw ArgException)
-        return $ solvePuzzle (size puzzle) (permutation puzzle) db)
+        return $ solvePuzzle (size puzzle) (permutation puzzle) fdb cdb)
                (\(e :: ArgException) -> return Nothing)
     respond $ responseLBS status200 origin (encode . PuzzleSolution $ r)
         where origin = [("Access-Control-Allow-Origin", "*")]
