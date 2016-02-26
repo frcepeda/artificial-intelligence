@@ -11,8 +11,8 @@ import Data.Bits
 import Data.List
 import Data.Maybe
 import Data.STRef
-import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as VM
 import qualified Data.Set as S
 import qualified Data.PQueue.Min as P
 import Data.Word
@@ -32,14 +32,15 @@ toPuzzle = foldr (\x r -> unsafeShiftL r 4 + fromIntegral x) 0
 
 mask = (1 `unsafeShiftL` 4) - 1
 
+--fromPuzzle :: Integral a => Int -> Puzzle -> [a]
 fromPuzzle n p = fp p (n*n)
     where fp p 0 = []
           fp p z = p .&. mask : fp (p `unsafeShiftR` 4) (z-1)
 
---{-# INLINE numAt #-}
+{-# INLINE numAt #-}
 numAt n p (i,j) = unsafeShiftR p (4*(n*i + j)) .&. mask
 
---{-# INLINE findElem #-}
+{-# INLINE findElem #-}
 findElem n p e = flip quotRem n . fromJust . elemIndex e $ p
 
 moves :: Int -> Puzzle -> [(Int, Puzzle)]
@@ -115,7 +116,7 @@ permutationNumber n k (x:xs) =
 
 bfs :: Int -> Puzzle -> V.Vector Word8
 bfs n start = runST $ do
-    db <- GM.new dbSize
+    db <- VM.new dbSize
     q <- Q.empty (div dbSize 3)
     cnt <- newSTRef (0 :: Int)
     Q.insert start q
@@ -124,20 +125,21 @@ bfs n start = runST $ do
          case view of
              Nothing -> return ()
              (Just x) -> do
-                 c <- GM.read db (patternID x)
+                 c <- VM.read db (patternID x)
 
                  modifySTRef' cnt (+1)
 
                  soFar <- readSTRef cnt
-                 when (mod soFar (10^3 :: Int) == 0) (traceShowM soFar)
+                 when (mod soFar (10^5 :: Int) == 0) (traceShowM soFar)
 
-                 forM_ (moves n x) $ \(m, next) -> do
-                     d <- GM.read db (patternID next)
+                 forM_ (moves n x) $ \(_, next) -> do
+                     d <- VM.read db (patternID next)
                      when (d == 0) $ do
-                         GM.write db (patternID next) (c+1)
+                         VM.write db (patternID next) (c+1)
                          Q.insert next q
 
-                 when (soFar < (10^6 :: Int)) bfs'
+                 --when (soFar < (10^7 :: Int)) bfs'
+                 bfs'
     bfs'
-    GM.write db (patternID start) 0
+    VM.write db (patternID start) 0
     V.freeze db

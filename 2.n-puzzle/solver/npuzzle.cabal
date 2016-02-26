@@ -18,7 +18,6 @@ library
   exposed-modules:     Lib, Serializer
   other-modules:       Utils, Queue
   ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
-                       -auto-all
   build-depends:       base >= 4.7 && < 5, vector, pqueue,
                        transformers, containers, primitive,
                        bytestring
@@ -34,5 +33,4 @@ executable preprocessing
   hs-source-dirs:      app
   main-is:             Preprocess.hs
   ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
-                       -auto-all
   build-depends:       base, npuzzle, bytestring, binary, vector
