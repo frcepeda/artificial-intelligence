@@ -4,4 +4,4 @@ import Lib
 import Serializer
 import System.IO
 
-main = withFile "fringeDB" WriteMode (writeWord8Vector (patternDB fringe))
+main = withFile "cornerDB" WriteMode (writeWord8Vector (patternDB corner))

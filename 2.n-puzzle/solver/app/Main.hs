@@ -30,7 +30,7 @@ data PuzzleRequest = PuzzleRequest
     } deriving (Generic, Show)
 
 data PuzzleSolution = PuzzleSolution
-        { solution :: Maybe [Int]
+        { solution :: Maybe [Word8]
         } deriving (Generic, Show)
 
 data ArgException = ArgException
