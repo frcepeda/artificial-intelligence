@@ -95,7 +95,51 @@ function setup(n, perm){
 	return self;
 }
 
+function StopWatch(){
+	var self = this;
+
+	self.state = 'STOPPED';
+
+	self.reset = function(){
+		if (self.state === 'RUNNING')
+			self.stop();
+		$('#stopwatch').text('00:00.0000');
+	};
+
+	self.start = function(){
+		if (self.state !== 'STOPPED')
+			throw "stopwatch: invalid state."
+		self.state = 'RUNNING';
+		self.startTime = new Date().getTime();
+		self.tickEvent = setInterval(self.refreshDisplay, 1);
+	};
+
+	self.stop = function(){
+		if (self.state !== 'RUNNING')
+			throw 'stopwatch: invalid state.'
+		clearInterval(self.tickEvent);
+		self.state = 'STOPPED';
+	};
+
+	self.refreshDisplay = function(){
+		var diff = new Date().getTime() - self.startTime;
+		var millis = diff % 1000;
+		var seconds = Math.floor(diff / 1000) % 60;
+		var minutes = Math.floor(diff / (1000 * 60));
+		var pad = function(i,l){
+			var r = '' + i;
+			while (r.length < l)
+				r = '0' + r;
+			return r;
+		}
+		$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,4));
+	};
+
+	return self;
+}
+
 $(function (){
+	stopwatch = new StopWatch();
 	var currentGame = undefined;
 	var firstRun = true;
 
@@ -106,6 +150,7 @@ $(function (){
 		currentGame.solvable = undefined;
 		firstRun = false;
 		$("#message").text('Ready.');
+		stopwatch.reset();
 	};
 
 	$("#permutation-form").submit(function(){
@@ -154,6 +199,8 @@ $(function (){
 				token: "SEEKRITTOKEN"
 			};
 
+			stopwatch.start();
+
 			$.post({
 				type: "POST",
 				url: "http://ssh.freddy.mx:9592",
@@ -174,6 +221,8 @@ $(function (){
 					}
 				}}).fail(function (){
 					$("#message").text('Something went wrong...');
+				}).always(function (){
+					stopwatch.stop();
 				});
 		}
 	});
