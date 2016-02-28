@@ -20,8 +20,24 @@
 				       id="load"
 				       value="Load Permutation" />
 			</form>
-			<p id="stopwatch">00:00.0000</p>
 		</div>
+
+		<div>
+			<input type="text"
+			       id="target"
+			       value=""
+			       disabled/>
+			<label>
+			<input type="checkbox"
+			       id="customTarget"
+			       text="hello"
+			       onclick="document.getElementById('target').disabled=!this.checked;"
+			       />Custom Target</label>
+		</div>
+
+		<div>
+			<p id="stopwatch">00:00.000</p>
+		<div>
 
 		<div>
 			<form>

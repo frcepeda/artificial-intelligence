@@ -103,7 +103,7 @@ function StopWatch(){
 	self.reset = function(){
 		if (self.state === 'RUNNING')
 			self.stop();
-		$('#stopwatch').text('00:00.0000');
+		$('#stopwatch').text('00:00.000');
 	};
 
 	self.start = function(){
@@ -132,7 +132,7 @@ function StopWatch(){
 				r = '0' + r;
 			return r;
 		}
-		$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,4));
+		$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,3));
 	};
 
 	return self;
@@ -153,10 +153,15 @@ $(function (){
 		stopwatch.reset();
 	};
 
+	var toNumArray = function(str){
+		var xs = str.split(',');
+		for (var i = 0; i < xs.length; i++)
+			xs[i] = parseInt(xs[i]);
+		return xs;
+	}
+
 	$("#permutation-form").submit(function(){
-		var perm = $("#permutation").val().split(',');
-		for (var i = 0; i < perm.length; i++)
-			perm[i] = parseInt(perm[i]);
+		var perm = toNumArray($("#permutation").val());
 		loadPermutation(perm);
 		return false;
 	});
@@ -193,9 +198,14 @@ $(function (){
 		if (currentGame.solvable === undefined){
 			$("#message").text('Solving...');
 
+			var target = null;
+			if ($("#customTarget").is(":checked"))
+				target = toNumArray($("#target").val());
+
 			var payload = {
 				size: currentGame.n,
 				permutation: currentGame.start,
+				target: target,
 				token: "SEEKRITTOKEN"
 			};
 
