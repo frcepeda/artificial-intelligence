@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              Freddy Román
 maintainer:          me@freddy.mx
 copyright:           2016 Freddy Román
-category:            IA
+category:            AI
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
