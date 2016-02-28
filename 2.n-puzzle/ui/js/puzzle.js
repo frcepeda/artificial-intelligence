@@ -1,22 +1,25 @@
-function Puzzle(n, perm){
+function Puzzle(o){
 	var p = $("#puzzle-wrapper");
 	p.empty();
 
-	if (!perm){
-		perm = [];
-		for (var i = 0; i < n*n; i++)
-			perm.push(i);
-	}
+	var n = this.n = o.n;
 
-	this.n = n;
+	if (!o.start){
+		this.perm = [];
+		for (var i = 0; i < n*n; i++)
+			this.perm.push(i);
+	} else this.perm = o.start;
+
 	this.nextStep = 0;
-	this.start = perm.slice(0);
-	this.perm = perm;
+	this.start = this.perm.slice(0);
+
+	this.solvable = o.solvable != null ? o.solvable : null;
+	this.solution = o.solution;
 
 	this.inv = [];
 
 	for (var i = 0; i < n*n; i++)
-		this.inv[perm[i]] = i;
+		this.inv[this.perm[i]] = i;
 
 	this.pos = {};
 	this.cells = {};
@@ -32,7 +35,7 @@ function Puzzle(n, perm){
 	var h = $(".cell").outerHeight();
 
 	for (var i = 0; i < n*n; i++){
-		var pi = perm[i];
+		var pi = this.perm[i];
 		this.pos[pi] = {
 			top: h*Math.floor(i/n),
 			left: w*(i%n)
@@ -139,7 +142,7 @@ $(function (){
 	var loadPermutation = function(p){
 		$("#permutation").val(p);
 		var n = Math.round(Math.sqrt(p.length));
-		currentGame = new Puzzle(n, p);
+		currentGame = new Puzzle({n: n, start: p});
 		currentGame.solvable = undefined;
 		firstRun = false;
 		$("#message").text('Ready.');
@@ -175,7 +178,7 @@ $(function (){
 			currentGame.start = undefined;
 			firstRun = false;
 		}
-		currentGame = new Puzzle(currentGame.n, currentGame.start);
+		currentGame = new Puzzle(currentGame);
 	});
 
 	$("#step").click(function(){
@@ -187,7 +190,7 @@ $(function (){
 	});
 
 	$("#solve").click(function(){
-		if (currentGame.solvable === undefined){
+		if (currentGame.solvable == null){
 			$("#message").text('Solving...');
 
 			var target = null;
@@ -230,9 +233,12 @@ $(function (){
 		}
 	});
 
-	var currentGame = new Puzzle(3);
+	var currentGame = new Puzzle({n: 3});
 
-	currentGame.sequence([1,2,5,5,2,1]);
+	currentGame.sequence([1,2,5,4,3,6,7,8,
+	                      4,5,2,3,8,7,6,1,
+	                      3,2,5,8,1,6,7,4,
+	                      8,5,2,1,4,7,6,3]);
 
 	$('#message').text('Ready.');
 });
