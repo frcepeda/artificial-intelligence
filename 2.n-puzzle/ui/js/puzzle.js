@@ -106,20 +106,21 @@ Stopwatch.prototype.start = function(){
 	if (this.state !== 'STOPPED')
 		throw "stopwatch: invalid state."
 	this.state = 'RUNNING';
-	this.startTime = undefined;
+	this.startTime = new Date().getTime();
+	this.stopTime = undefined;
 	requestAnimationFrame(this.refreshDisplay.bind(this));
 };
 
 Stopwatch.prototype.stop = function(){
 	if (this.state !== 'RUNNING')
 		throw 'stopwatch: invalid state.'
+	this.stopTime = new Date().getTime();
 	this.state = 'STOPPED';
 };
 
 Stopwatch.prototype.refreshDisplay = function(time){
-	if (!this.startTime)
-		this.startTime = time;
-	var diff = time - this.startTime;
+	var t = this.stopTime || new Date().getTime();
+	var diff = t - this.startTime;
 	var millis = Math.floor(diff) % 1000;
 	var seconds = Math.floor(diff / 1000) % 60;
 	var minutes = Math.floor(diff / (1000 * 60));
