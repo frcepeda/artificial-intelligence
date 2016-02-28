@@ -26,6 +26,7 @@ noSolution = PuzzleSolution Nothing
 data PuzzleRequest = PuzzleRequest
     { size :: Int
     , permutation :: [Int]
+    , target :: Maybe [Int]
     , token :: String
     } deriving (Generic, Show)
 
@@ -52,9 +53,12 @@ main = do
 handler fdb cdb req respond = do
     r <- catch (do
         body <- B.fromStrict <$> requestBody req
-        let (Just puzzle) = decode body
+        let Just puzzle = decode body
         unless (token puzzle == "SEEKRITTOKEN") (throw ArgException)
-        return $ solvePuzzle (size puzzle) (permutation puzzle) fdb cdb)
+        return $ solvePuzzle (size puzzle)
+                             (permutation puzzle)
+                             (target puzzle)
+                             fdb cdb)
                (\(e :: ArgException) -> return Nothing)
     respond $ responseLBS status200 origin (encode . PuzzleSolution $ r)
         where origin = [("Access-Control-Allow-Origin", "*")]

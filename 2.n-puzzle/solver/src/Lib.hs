@@ -59,16 +59,24 @@ moves n p = catMaybes $ swap <$> deltas
                               unsafeShiftL num (4*(bi*n+bj))
                     num = numAt n p b
 
-solvePuzzle :: Int -> [Int] -> V.Vector Word8 -> V.Vector Word8 -> Maybe [Word8]
-solvePuzzle n xs fdb cdb = do
-    let goal = [0..n*n-1]
-    guard $ sort xs == goal
+solvePuzzle :: Int -> [Int] -> Maybe [Int]
+            -> V.Vector Word8 -> V.Vector Word8
+            -> Maybe [Word8]
+solvePuzzle n xs tg fdb cdb = do
+    let goal = case tg of 
+                  Nothing -> [0..n*n-1]
+                  Just t -> t
+
+    guard $ sort xs == [0..n*n-1]
+    guard $ sort goal == [0..n*n-1]
     guard $ parity n xs == parity n goal
-    let h = if n < 4
+
+    let h = if n < 4 || isJust tg
               then manhattanDist n
-              else \p -> fromIntegral $ max (pCost fringe fdb p)
-                                            (pCost corner cdb p)
-    aStar n h (toPuzzle xs) (toPuzzle [0..n*n-1])
+              else \p -> max (pCost fringe fdb p)
+                             (pCost corner cdb p)
+
+    aStar n h (toPuzzle xs) (toPuzzle goal)
 
 parity n p = mod (r + c + p') 2
     where (r,c) = findElem n p 0
