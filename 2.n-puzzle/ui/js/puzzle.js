@@ -167,7 +167,6 @@ $(function (){
 			perm.push(perm[r]);
 			perm[r] = i;
 		}
-		console.log(perm);
 		loadPermutation(perm);
 	});
 
@@ -210,7 +209,6 @@ $(function (){
 				data: JSON.stringify(payload),
 				success: function(data){
 					var r = JSON.parse(data);
-					console.log(r);
 
 					if (r.solution){
 						currentGame.solution = r.solution;
