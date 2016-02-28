@@ -1,35 +1,31 @@
-function setup(n, perm){
-	var self = this;
-
+function Puzzle(n, perm){
 	var p = $("#puzzle-wrapper");
-
-	self.n = n;
-
 	p.empty();
 
-	if (perm === undefined){
+	if (!perm){
 		perm = [];
 		for (var i = 0; i < n*n; i++)
 			perm.push(i);
 	}
 
-	self.nextStep = 0;
-	self.start = perm.slice(0);
-	self.perm = perm;
+	this.n = n;
+	this.nextStep = 0;
+	this.start = perm.slice(0);
+	this.perm = perm;
 
-	self.inv = [];
+	this.inv = [];
 
 	for (var i = 0; i < n*n; i++)
-		self.inv[perm[i]] = i;
+		this.inv[perm[i]] = i;
 
-	self.pos = {};
-	self.cells = {};
+	this.pos = {};
+	this.cells = {};
 
 	for (var i = 0; i < n*n; i++){
-		self.cells[i] = $("<div></div>",
+		this.cells[i] = $("<div></div>",
 				 { class: "cell",
 				   text: i});
-		p.append(self.cells[i]);
+		p.append(this.cells[i]);
 	}
 
 	var w = $(".cell").outerWidth();
@@ -37,116 +33,110 @@ function setup(n, perm){
 
 	for (var i = 0; i < n*n; i++){
 		var pi = perm[i];
-		self.pos[pi] = {
+		this.pos[pi] = {
 			top: h*Math.floor(i/n),
 			left: w*(i%n)
 		}
-		self.cells[pi].css(self.pos[pi]);
+		this.cells[pi].css(this.pos[pi]);
 	}
 
-	self.cells[0].css("display", "none");
-
-	self.move = function(id, callback){
-		var tmp = self.pos[0];
-		self.pos[0] = self.pos[id];
-		self.pos[id] = tmp;
-
-		var iinv = self.inv[id]
-		var zinv = self.inv[0];
-
-		self.perm[iinv] = 0;
-		self.perm[zinv] = id;
-		self.inv[0] = iinv;
-		self.inv[id] = zinv;
-
-		self.cells[id].animate(
-			self.pos[id],
-			{complete: callback}
-		);
-	}
-
-	self.step = function(){
-		if (!self.solvable) return;
-		if (self.nextStep == self.solution.length) return;
-		self.move(self.solution[self.nextStep++]);
-	}
-
-	self.sequence = function(xs, callback){
-		var i = 0;
-
-		var loop = function(){
-			if (i == xs.length){
-				if (callback !== undefined)
-					callback();
-				return;
-			}
-			self.move(xs[i++], loop);
-		};
-
-		loop();
-	}
-
-	self.allSteps = function(){
-		if (!self.solvable) return;
-		self.sequence(self.solution.slice(self.nextStep));
-		self.nextStep = self.solution.length;
-	}
-
-	return self;
+	this.cells[0].css("display", "none");
 }
 
-function StopWatch(){
-	var self = this;
+Puzzle.prototype.move = function(id, callback){
+	var tmp = this.pos[0];
+	this.pos[0] = this.pos[id];
+	this.pos[id] = tmp;
 
-	self.state = 'STOPPED';
+	var iinv = this.inv[id]
+	var zinv = this.inv[0];
 
-	self.reset = function(){
-		if (self.state === 'RUNNING')
-			self.stop();
-		$('#stopwatch').text('00:00.000');
-	};
+	this.perm[iinv] = 0;
+	this.perm[zinv] = id;
+	this.inv[0] = iinv;
+	this.inv[id] = zinv;
 
-	self.start = function(){
-		if (self.state !== 'STOPPED')
-			throw "stopwatch: invalid state."
-		self.state = 'RUNNING';
-		self.startTime = new Date().getTime();
-		self.tickEvent = setInterval(self.refreshDisplay, 1);
-	};
+	this.cells[id].animate(
+		this.pos[id],
+		{complete: callback}
+	);
+}
 
-	self.stop = function(){
-		if (self.state !== 'RUNNING')
-			throw 'stopwatch: invalid state.'
-		clearInterval(self.tickEvent);
-		self.state = 'STOPPED';
-	};
+Puzzle.prototype.step = function(){
+	if (!this.solvable) return;
+	if (this.nextStep == this.solution.length) return;
+	this.move(this.solution[this.nextStep++]);
+}
 
-	self.refreshDisplay = function(){
-		var diff = new Date().getTime() - self.startTime;
-		var millis = diff % 1000;
-		var seconds = Math.floor(diff / 1000) % 60;
-		var minutes = Math.floor(diff / (1000 * 60));
-		var pad = function(i,l){
-			var r = '' + i;
-			while (r.length < l)
-				r = '0' + r;
-			return r;
+Puzzle.prototype.sequence = function(xs, callback){
+	var i = 0;
+
+	var loop = function(){
+		if (i == xs.length){
+			if (callback)
+				callback();
+			return;
 		}
-		$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,3));
+		this.move(xs[i++], loop.bind(this));
 	};
 
-	return self;
+	loop.bind(this)();
 }
+
+Puzzle.prototype.allSteps = function(){
+	if (!this.solvable) return;
+	this.sequence(this.solution.slice(this.nextStep));
+	this.nextStep = this.solution.length;
+}
+
+function Stopwatch(){
+	this.state = 'STOPPED';
+}
+
+Stopwatch.prototype.reset = function(){
+	if (this.state === 'RUNNING')
+		this.stop();
+	$('#stopwatch').text('00:00.000');
+};
+
+Stopwatch.prototype.start = function(){
+	if (this.state !== 'STOPPED')
+		throw "stopwatch: invalid state."
+	this.state = 'RUNNING';
+	this.startTime = new Date().getTime();
+	this.tickEvent = setInterval(this.refreshDisplay.bind(this), 16);
+};
+
+Stopwatch.prototype.stop = function(){
+	if (this.state !== 'RUNNING')
+		throw 'stopwatch: invalid state.'
+	clearInterval(this.tickEvent);
+	this.state = 'STOPPED';
+};
+
+Stopwatch.prototype.refreshDisplay = function(){
+	var diff = new Date().getTime() - this.startTime;
+	var millis = diff % 1000;
+	var seconds = Math.floor(diff / 1000) % 60;
+	var minutes = Math.floor(diff / (1000 * 60));
+	var pad = function(i,l){
+		var r = '' + i;
+		while (r.length < l)
+			r = '0' + r;
+		return r;
+	}
+	$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,3));
+};
 
 $(function (){
-	stopwatch = new StopWatch();
+	stopwatch = new Stopwatch();
 	var currentGame = undefined;
 	var firstRun = true;
 
 	var loadPermutation = function(p){
 		$("#permutation").val(p);
 		var n = Math.round(Math.sqrt(p.length));
-		currentGame = setup(n, p);
+		currentGame = new Puzzle(n, p);
 		currentGame.solvable = undefined;
 		firstRun = false;
 		$("#message").text('Ready.');
@@ -183,7 +173,7 @@ $(function (){
 			currentGame.start = undefined;
 			firstRun = false;
 		}
-		currentGame = setup(currentGame.n, currentGame.start);
+		currentGame = new Puzzle(currentGame.n, currentGame.start);
 	});
 
 	$("#step").click(function(){
@@ -239,7 +229,7 @@ $(function (){
 		}
 	});
 
-	var currentGame = setup(3);
+	var currentGame = new Puzzle(3);
 
 	currentGame.sequence([1,2,5,5,2,1]);
 
