@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Utils
     ( factorial
     , mapSnd
@@ -20,9 +22,9 @@ mapSnd f (a,b) = (a, f b)
 
 indices xs ys = map (\x -> fromJust . elemIndex x $ ys) xs
 
-permutationNumber n k xs = p' n k [] xs
-    where p' _ _ _ [] = 0
-          p' n k prev (x:xs) = this + p' (n-1) (k-1) (x:prev) xs
+permutationNumber n k xs = p' n k [] 0 xs
+    where p' _ _ _ a [] = a
+          p' n k prev !a (x:xs) = p' (n-1) (k-1) (x:prev) (a + this) xs
             where this = (factorial (n-1) `div` factorial (n-1-(k-1))) * me
                   me = x - count (< x) prev
 
