@@ -103,20 +103,21 @@ Stopwatch.prototype.start = function(){
 	if (this.state !== 'STOPPED')
 		throw "stopwatch: invalid state."
 	this.state = 'RUNNING';
-	this.startTime = new Date().getTime();
-	this.tickEvent = setInterval(this.refreshDisplay.bind(this), 16);
+	this.startTime = undefined;
+	requestAnimationFrame(this.refreshDisplay.bind(this));
 };
 
 Stopwatch.prototype.stop = function(){
 	if (this.state !== 'RUNNING')
 		throw 'stopwatch: invalid state.'
-	clearInterval(this.tickEvent);
 	this.state = 'STOPPED';
 };
 
-Stopwatch.prototype.refreshDisplay = function(){
-	var diff = new Date().getTime() - this.startTime;
-	var millis = diff % 1000;
+Stopwatch.prototype.refreshDisplay = function(time){
+	if (!this.startTime)
+		this.startTime = time;
+	var diff = time - this.startTime;
+	var millis = Math.floor(diff) % 1000;
 	var seconds = Math.floor(diff / 1000) % 60;
 	var minutes = Math.floor(diff / (1000 * 60));
 	var pad = function(i,l){
@@ -126,6 +127,8 @@ Stopwatch.prototype.refreshDisplay = function(){
 		return r;
 	}
 	$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,3));
+	if (this.state === 'RUNNING')
+		requestAnimationFrame(this.refreshDisplay.bind(this));
 };
 
 $(function (){
