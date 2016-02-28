@@ -216,7 +216,7 @@ $(function (){
 						$("#message").text('Solved in '
 								  + currentGame.solution.length
 								  + ' step'
-								  + (r.solution == 1 ? '' : 's')
+								  + (r.solution.length == 1 ? '' : 's')
 								  + '!');
 					} else {
 						currentGame.solvable = false;
