@@ -224,7 +224,9 @@ $(function (){
 						currentGame.solvable = true;
 						$("#message").text('Solved in '
 								  + currentGame.solution.length
-								  + ' steps!');
+								  + ' step'
+								  + (r.solution == 1 ? '' : 's')
+								  + '!');
 					} else {
 						currentGame.solvable = false;
 						$("#message").text('Not solvable :c');
