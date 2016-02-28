@@ -28,26 +28,25 @@ import Control.Monad.Trans.State.Strict
 
 type Puzzle = Word64
 
-pprint n p = show $ map (map (numAt n p)) [[(i,j) | j <- [0..n-1]] | i <- [0..n-1]]
-
 toPuzzle :: [Int] -> Puzzle
 toPuzzle = foldr (\x r -> unsafeShiftL r 4 + fromIntegral x) 0
 
-mask = (1 `unsafeShiftL` 4) - 1
+cellMask = (1 `unsafeShiftL` 4) - 1
 
 fromPuzzle :: Integral a => Int -> Puzzle -> [a]
 fromPuzzle n p = fp p (n*n)
     where fp p 0 = []
-          fp p z = fromIntegral (p .&. mask) : fp (p `unsafeShiftR` 4) (z-1)
+          fp p z = fromIntegral (p .&. cellMask)
+                   : fp (p `unsafeShiftR` 4) (z-1)
 
 {-# INLINE numAt #-}
-numAt n p (i,j) = unsafeShiftR p (4*(n*i + j)) .&. mask
+numAt n p (i,j) = unsafeShiftR p (4*(n*i + j)) .&. cellMask
 
 {-# INLINE findElem #-}
 findElem n p e = flip quotRem n . fromJust . elemIndex e $ p
 
 moves :: Int -> Puzzle -> [(Word8, Puzzle)]
-moves n p = catMaybes $ swap <$> deltas
+moves n p = catMaybes $ map swap deltas
     where perm = fromPuzzle n p
           z@(zi,zj) = findElem n perm 0
           deltas = [(zi+1,zj), (zi-1,zj), (zi,zj+1), (zi,zj-1)]
