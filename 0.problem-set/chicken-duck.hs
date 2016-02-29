@@ -6,7 +6,6 @@ split (x:xs) = lefts ++ rights
           rights = map (\(a,b) -> (a,x:b)) rest
 split _ = [([],[])]
 
-pickOne [x] = [(x,[])]
 pickOne (x:xs) = (x,xs) : map (\(a,b) -> (a,x:b)) (pickOne xs)
 pickOne _ = []
 
