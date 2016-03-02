@@ -46,6 +46,10 @@ Connect4.prototype.handleClick = function(e){
 	}
 };
 
+Connect4.prototype.cursor = function (s){
+	this.jcanvas.css('cursor', s);
+}
+
 Connect4.prototype.play = function(j, p){
 	var i = this.r;
 	for (; i > 0 && this.grid[i-1][j] === ''; i--);
@@ -116,22 +120,24 @@ $(document).ready(function (){
 	$(window).resize(connect4.draw.bind(connect4));
 
 	var randomPlayer = function(callback){
+		connect4.cursor('wait');
 		window.setTimeout(function () {
+			connect4.cursor('auto');
 			callback(Math.floor(Math.random() * 7));
 		}, 700);
 	}
 
-	var waitingPlayer = function(callback){
-		connect4.jcanvas.css('cursor', 'pointer');
+	var humanPlayer = function(callback){
+		connect4.cursor('pointer');
 		connect4.clickCallback = function (m){
-			connect4.jcanvas.css('cursor', 'auto');
+			connect4.cursor('auto');
 			connect4.clickCallback = null;
 			callback(m);
 		};
 	}
 
 	connect4.draw();
-	connect4.begin(waitingPlayer, randomPlayer);
+	connect4.begin(humanPlayer, humanPlayer);
 	var i = 0;
 	var loop = function () { connect4.step(loop); };
 	connect4.step(loop);
