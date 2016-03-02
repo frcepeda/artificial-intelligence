@@ -1,4 +1,5 @@
-function Connect4(r, c){
+function Connect4(n, r, c){
+	this.n = n;
 	this.r = r;
 	this.c = c;
 
@@ -8,7 +9,7 @@ function Connect4(r, c){
 	for (var i = 0; i < r; i++){
 		this.grid.push([]);
 		for (var j = 0; j < c; j++)
-			this.grid[i].push('');
+			this.grid[i].push(null);
 	}
 
 	$('#game-window').unbind('onclick');
@@ -32,11 +33,28 @@ Connect4.prototype.step = function(callback){
 	var self = this;
 	this.moveFunc[this.currentPlayer](function (m) {
 		var valid = self.play(m, self.currentPlayer);
-		if (valid)
+		if (valid){
 			self.currentPlayer = (self.currentPlayer + 1) % 2;
+			var w = self.winner();
+			if (w !== null){
+				self.state = 'DONE';
+				self.result = w;
+
+				if (self.finishedCallback)
+					self.finishedCallback(w);
+			}
+		}
 		callback(valid);
 	});
 }
+
+Connect4.prototype.winner = function(){
+	//TODO: return null, 0, 1, 'DRAW';
+	//Find a streak of this.n consecutive tiles of the same color.
+	//this.grid has dimensions this.r \times this.c
+	return null;
+}
+
 
 Connect4.prototype.handleClick = function(e){
 	if (this.clickCallback){
@@ -52,7 +70,7 @@ Connect4.prototype.cursor = function (s){
 
 Connect4.prototype.play = function(j, p){
 	var i = this.r;
-	for (; i > 0 && this.grid[i-1][j] === ''; i--);
+	for (; i > 0 && this.grid[i-1][j] === null; i--);
 	if (i == this.r){
 		console.log('play: invalid move ' + j + ' by player ' + p);
 		return false;
@@ -114,31 +132,143 @@ Connect4.prototype.draw = function(){
 	}
 }
 
-$(document).ready(function (){
-	var connect4 = new Connect4(6,7);
+function Stopwatch(){
+	this.state = 'STOPPED';
+}
 
-	$(window).resize(connect4.draw.bind(connect4));
+Stopwatch.prototype.reset = function(){
+	if (this.state === 'RUNNING')
+		this.stop();
+	$('#stopwatch').text('00:00.000');
+};
+
+Stopwatch.prototype.start = function(){
+	if (this.state !== 'STOPPED')
+		throw "stopwatch: invalid state."
+	this.state = 'RUNNING';
+	this.startTime = new Date().getTime();
+	this.stopTime = undefined;
+	requestAnimationFrame(this.refreshDisplay.bind(this));
+};
+
+Stopwatch.prototype.stop = function(){
+	if (this.state !== 'RUNNING')
+		throw 'stopwatch: invalid state.'
+	this.stopTime = new Date().getTime();
+	this.state = 'STOPPED';
+};
+
+Stopwatch.prototype.refreshDisplay = function(time){
+	var t = this.stopTime || new Date().getTime();
+	var diff = t - this.startTime;
+	var millis = Math.floor(diff) % 1000;
+	var seconds = Math.floor(diff / 1000) % 60;
+	var minutes = Math.floor(diff / (1000 * 60));
+	var pad = function(i,l){
+		var r = '' + i;
+		while (r.length < l)
+			r = '0' + r;
+		return r;
+	}
+	$('#stopwatch').text(pad(minutes,2)+':'+pad(seconds,2)+'.'+pad(millis,3));
+	if (this.state === 'RUNNING')
+		requestAnimationFrame(this.refreshDisplay.bind(this));
+};
+
+$(document).ready(function (){
+	var currentGame = new Connect4(4,6,7);
+
+	currentGame.finishedCallback = function (w){
+		if (w === 'DRAW')
+			alert('Draw!');
+		else
+			alert((w === 0 ? 'Blue' : 'Red') + ' player won!');
+	};
+
+	$(window).resize(currentGame.draw.bind(currentGame));
 
 	var randomPlayer = function(callback){
-		connect4.cursor('wait');
+		currentGame.cursor('wait');
 		window.setTimeout(function () {
-			connect4.cursor('auto');
+			currentGame.cursor('auto');
 			callback(Math.floor(Math.random() * 7));
 		}, 700);
 	}
 
 	var humanPlayer = function(callback){
-		connect4.cursor('pointer');
-		connect4.clickCallback = function (m){
-			connect4.cursor('auto');
-			connect4.clickCallback = null;
+		currentGame.cursor('pointer');
+		currentGame.clickCallback = function (m){
+			currentGame.cursor('auto');
+			currentGame.clickCallback = null;
 			callback(m);
 		};
 	}
 
-	connect4.draw();
-	connect4.begin(humanPlayer, humanPlayer);
-	var i = 0;
-	var loop = function () { connect4.step(loop); };
-	connect4.step(loop);
+	var AIPlayer = function(exp) {
+		var f = function(callback){
+			var payload = {
+				target: currentGame.n,
+				rows: currentGame.r,
+				cols: currentGame.c,
+				grid: currentGame.grid,
+				experience: exp,
+				token: "SEEKRITTOKEN"
+			};
+
+			var stopwatch = new Stopwatch();
+			stopwatch.start();
+			currentGame.cursor('wait');
+
+			$.post({
+				type: "POST",
+				url: "http://ssh.freddy.mx:9593",
+				data: JSON.stringify(payload),
+				success: function(data){
+					var r = JSON.parse(data);
+					callback(r.move);
+				}}).fail(function (){
+					if(confirm("Something went wrong... Retry?"))
+						f(callback);
+				}).always(function (){
+					stopwatch.stop();
+					currentGame.cursor('auto');
+				});
+		};
+		return f;
+	};
+
+	var players = [
+		{func: humanPlayer, name: 'Human'},
+		{func: randomPlayer, name: 'Random (CPU)'},
+		{func: AIPlayer('novice'), name: 'Novice (CPU)'},
+		{func: AIPlayer('amateur'), name: 'Amateur (CPU)'},
+		{func: AIPlayer('expert'), name: 'Expert (CPU)'},
+	];
+
+	for (var i = 0; i < players.length; i++){
+		var a = new Option(players[i].name, i);
+		var b = new Option(players[i].name, i);
+		$('#playerA').append($(a));
+		$('#playerB').append($(b));
+	}
+
+	$('#start').click(function() {
+		$('#start').hide();
+		$('#reset').show();
+		currentGame.begin(players[$('#playerA').val()].func,
+		                  players[$('#playerB').val()].func);
+		var i = 0;
+		var loop = function () {
+			if (currentGame.state !== 'DONE')
+				currentGame.step(loop);
+		};
+		loop();
+	});
+
+	$('#reset').hide();
+	$('#reset').click(function (){
+		document.location.reload();
+	});
+
+	currentGame.draw();
 });
