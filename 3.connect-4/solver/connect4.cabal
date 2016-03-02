@@ -1,0 +1,29 @@
+name:                connect4
+version:             0.1.0.0
+synopsis:            Connect 4 AI player
+description:         Homework #2 for ITAM AI course
+homepage:            http://github.com/frcepeda/artificial-intelligence
+license:             BSD3
+license-file:        LICENSE
+author:              Freddy Román
+maintainer:          me@freddy.mx
+copyright:           2016 Freddy Román
+category:            AI
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Connect4
+  other-modules:       Connect4.Types
+  build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+
+executable connect4-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base, connect4, aeson, wai, warp, bytestring,
+                       http-types
+  default-language:    Haskell2010
