@@ -23,6 +23,7 @@ Connect4.prototype.begin = function(p1, p2){
 		throw 'connect4 begin: invalid state';
 	this.moveFunc = [p1, p2];
 	this.currentPlayer = 0;
+	this.totalMoves = 0;
 	this.state = 'PLAYING';
 }
 
@@ -34,6 +35,7 @@ Connect4.prototype.step = function(callback){
 	this.moveFunc[this.currentPlayer](function (m) {
 		var valid = self.play(m, self.currentPlayer);
 		if (valid){
+			this.totalMoves++;
 			self.currentPlayer = (self.currentPlayer + 1) % 2;
 			var w = self.winner();
 			if (w !== null){
@@ -49,10 +51,64 @@ Connect4.prototype.step = function(callback){
 }
 
 Connect4.prototype.winner = function(){
-	//TODO: return null, 0, 1, 'DRAW';
-	//Find a streak of this.n consecutive tiles of the same color.
-	//this.grid has dimensions this.r \times this.c
+	if (this.checkColor(0)) return 0;
+	if (this.checkColor(1)) return 1;
+	if (this.totalMoves === this.r * this.c) return 'DRAW';
 	return null;
+}
+
+Connect4.prototype.checkColor = function(p){
+	for (var i = 0; i < this.r; i++){
+		var count = 0;
+		for (var j = 0; j < this.c; j++){
+			if (this.grid[i][j] === p)
+				count++;
+			else
+				count = 0;
+
+			if (count === this.n) return true;
+		}
+	}
+
+	for (var j = 0; j < this.c; j++){
+		var count = 0;
+		for (var i = 0; i < this.r; i++){
+			if (this.grid[i][j] === p)
+				count++;
+			else
+				count = 0;
+
+			if (count === this.n) return true;
+		}
+	}
+
+	for (var k = 0; k <= this.r + this.c - 2; k++){
+		var count = 0;
+		for (i = 0; i <= k; i++){
+			if (i >= this.r || k-i >= this.c) continue;
+			if (this.grid[i][k-i] === p)
+				count++;
+			else
+				count = 0;
+
+			if (count === this.n) return true;
+		}
+	}
+
+	for (var k = 0; k <= this.r + this.c - 2; k++){
+		var count = 0;
+		for (i = 0; i <= k; i++){
+			if (i >= this.r || k-i >= this.c) continue;
+			if (this.grid[this.r - i - 1][k-i] === p)
+				count++;
+			else
+				count = 0;
+
+			if (count === this.n) return true;
+		}
+	}
+
+	return false;
 }
 
 
@@ -71,7 +127,7 @@ Connect4.prototype.cursor = function (s){
 Connect4.prototype.play = function(j, p){
 	var i = this.r;
 	for (; i > 0 && this.grid[i-1][j] === null; i--);
-	if (i == this.r){
+	if (i === this.r){
 		console.log('play: invalid move ' + j + ' by player ' + p);
 		return false;
 	}
@@ -101,6 +157,9 @@ Connect4.prototype.draw = function(){
 
 	ctx.fillStyle = 'black';
 	ctx.fillRect(0, 0, w, h);
+
+	if (this.state === 'READY')
+		return;
 
 	ctx.beginPath();
 
@@ -192,7 +251,7 @@ $(document).ready(function (){
 		window.setTimeout(function () {
 			currentGame.cursor('auto');
 			callback(Math.floor(Math.random() * 7));
-		}, 700);
+		}, 300);
 	}
 
 	var humanPlayer = function(callback){
@@ -234,6 +293,7 @@ $(document).ready(function (){
 					currentGame.cursor('auto');
 				});
 		};
+		
 		return f;
 	};
 
@@ -248,16 +308,27 @@ $(document).ready(function (){
 	for (var i = 0; i < players.length; i++){
 		var a = new Option(players[i].name, i);
 		var b = new Option(players[i].name, i);
+
 		$('#playerA').append($(a));
 		$('#playerB').append($(b));
+	}
+
+	if (sessionStorage){
+		if (sessionStorage.getItem('playerA') !== undefined)
+			$('#playerA').prop('selectedIndex', sessionStorage.getItem('playerA'));
+
+		if (sessionStorage.getItem('playerB') !== undefined)
+			$('#playerB').prop('selectedIndex', sessionStorage.getItem('playerB'));
 	}
 
 	$('#start').click(function() {
 		$('#start').hide();
 		$('#reset').show();
+
 		currentGame.begin(players[$('#playerA').val()].func,
 		                  players[$('#playerB').val()].func);
-		var i = 0;
+		currentGame.draw();
+
 		var loop = function () {
 			if (currentGame.state !== 'DONE')
 				currentGame.step(loop);
@@ -267,6 +338,11 @@ $(document).ready(function (){
 
 	$('#reset').hide();
 	$('#reset').click(function (){
+		if (sessionStorage){
+			sessionStorage.setItem('playerA', $('#playerA').val());
+			sessionStorage.setItem('playerB', $('#playerB').val());
+		}
+
 		document.location.reload();
 	});
 
