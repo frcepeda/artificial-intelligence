@@ -25,7 +25,7 @@ isFull b = undefined
 
 {-| The heuristic score for a state.
 It must satisfy the zero-sum property.
-(i.e. stateScore b = stateScore b' where b
+(i.e. stateScore b = - stateScore b' where b
 and b' have opposite player fields.)
 Also, a winning position must award inf/2
 points to the winning player.
