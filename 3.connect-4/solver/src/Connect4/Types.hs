@@ -3,6 +3,7 @@
 module Connect4.Types
     ( Experience(..)
     , BoardState(..)
+    , opponent
     ) where
 
 import GHC.Generics
@@ -16,6 +17,10 @@ data Experience = Novice
 
 data Player = A | B
     deriving (Show, Eq)
+
+opponent :: Player -> Player
+opponent A = B
+opponent B = A
 
 data BoardState = BoardState
     { grid :: Array (Int,Int) (Maybe Player) -- ^ The game grid

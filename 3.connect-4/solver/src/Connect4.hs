@@ -35,12 +35,16 @@ points to the winning player.
 -}
 stateScore :: BoardState -> Int
 stateScore b = undefined
-
 {-| List all the possible new board
 states possible from the given one.
 -}
 moves :: BoardState -> [(Int, BoardState)]
-moves b = undefined
+moves BoardState{..} = [(a,b) | (a,b) <- preMoves, ((!) top a) <= height]
+    where preMoves = map (\i -> (i, BoardState {grid = x i, top = y i, player = z})) (indices top)
+            where x i = grid // [((((!) top i), i), Just player)]
+                  y i = top // [(i, ((!) top i) + 1)]
+                  z = opponent player
+          height = fst . snd . bounds $ grid
 
 negamax :: BoardState -- ^ The starting state
         -> (BoardState -> Int) -- ^ A heuristic
