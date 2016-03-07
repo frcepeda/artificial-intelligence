@@ -22,9 +22,8 @@ depth _ = undefined
 inf = 10^6 -- never forget
 
 isFull :: BoardState -> Bool
-isFull BoardState{..} = all (== height) (elems top)
-    where height = fst . snd . bounds $ grid
-          
+isFull (grid top _) = foldl (\acc x -> if x != y then False else acc) True (elems top)
+    where y = fst.snd (bounds grid)
 
 {-| The heuristic score for a state.
 It must satisfy the zero-sum property.
