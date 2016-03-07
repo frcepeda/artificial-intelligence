@@ -4,11 +4,12 @@ module Connect4.Types
     ( Experience(..)
     , BoardState(..)
     , opponent
+    , height
     ) where
 
 import GHC.Generics
-import Data.Array.Unboxed
-import Data.Array
+import qualified Data.Array.Unboxed as U
+import qualified Data.Array as A
 
 data Experience = Novice
                 | Amateur
@@ -23,7 +24,10 @@ opponent A = B
 opponent B = A
 
 data BoardState = BoardState
-    { grid :: Array (Int,Int) (Maybe Player) -- ^ The game grid
-    , top :: Array Int Int -- ^ The next available row for every column
+    { grid :: A.Array (Int,Int) (Maybe Player) -- ^ The game grid
+    , top :: U.UArray Int Int -- ^ The next available row for every column
     , player :: Player -- ^ whose turn it is
     }
+
+height :: A.Array (Int,Int) (Maybe Player) -> Int
+height = (+1) . fst . snd . A.bounds

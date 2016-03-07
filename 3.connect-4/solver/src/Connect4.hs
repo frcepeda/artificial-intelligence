@@ -22,9 +22,8 @@ depth _ = undefined
 inf = 10^6 -- never forget
 
 isFull :: BoardState -> Bool
-isFull BoardState{..} = all (== height) (elems top)
-    where height = fst . snd . bounds $ grid
-          
+isFull BoardState{..} = all (== height grid) (elems top)
+
 
 {-| The heuristic score for a state.
 It must satisfy the zero-sum property.
@@ -35,16 +34,20 @@ points to the winning player.
 -}
 stateScore :: BoardState -> Int
 stateScore b = undefined
+
+
 {-| List all the possible new board
 states possible from the given one.
 -}
 moves :: BoardState -> [(Int, BoardState)]
-moves BoardState{..} = [(a,b) | (a,b) <- preMoves, ((!) top a) <= height]
-    where preMoves = map (\i -> (i, BoardState {grid = x i, top = y i, player = z})) (indices top)
-            where x i = grid // [((((!) top i), i), Just player)]
-                  y i = top // [(i, ((!) top i) + 1)]
-                  z = opponent player
-          height = fst . snd . bounds $ grid
+moves BoardState{..} = map (\i -> (fst i, move i)) valid
+    where valid = filter notFull (assocs top)
+          notFull (_,z) = z < height grid
+          move (i,z) = BoardState
+                         { grid = grid // [((z, i), Just player)]
+                         , top = top // [(i, z+1)]
+                         , player = opponent player
+                         }
 
 negamax :: BoardState -- ^ The starting state
         -> (BoardState -> Int) -- ^ A heuristic
