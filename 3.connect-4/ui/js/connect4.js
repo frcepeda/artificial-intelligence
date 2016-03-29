@@ -35,7 +35,7 @@ Connect4.prototype.step = function(callback){
 	this.moveFunc[this.currentPlayer](function (m) {
 		var valid = self.play(m, self.currentPlayer);
 		if (valid){
-			this.totalMoves++;
+			self.totalMoves++;
 			self.currentPlayer = (self.currentPlayer + 1) % 2;
 			var w = self.winner();
 			if (w !== null){
@@ -271,6 +271,7 @@ $(document).ready(function (){
 				cols: currentGame.c,
 				grid: currentGame.grid,
 				experience: exp,
+				player: currentGame.currentPlayer,
 				token: "SEEKRITTOKEN"
 			};
 
@@ -280,7 +281,8 @@ $(document).ready(function (){
 
 			$.post({
 				type: "POST",
-				url: "http://ssh.freddy.mx:9593",
+				//url: "http://ssh.freddy.mx:9593",
+				url: "http://localhost:9593",
 				data: JSON.stringify(payload),
 				success: function(data){
 					var r = JSON.parse(data);
@@ -300,9 +302,9 @@ $(document).ready(function (){
 	var players = [
 		{func: humanPlayer, name: 'Human'},
 		{func: randomPlayer, name: 'Random (CPU)'},
-		{func: AIPlayer('novice'), name: 'Novice (CPU)'},
-		{func: AIPlayer('amateur'), name: 'Amateur (CPU)'},
-		{func: AIPlayer('expert'), name: 'Expert (CPU)'},
+		{func: AIPlayer('Novice'), name: 'Novice (CPU)'},
+		{func: AIPlayer('Amateur'), name: 'Amateur (CPU)'},
+		{func: AIPlayer('Expert'), name: 'Expert (CPU)'},
 	];
 
 	for (var i = 0; i < players.length; i++){

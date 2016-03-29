@@ -3,6 +3,7 @@
 module Connect4.Types
     ( Experience(..)
     , BoardState(..)
+    , Player(..)
     , opponent
     , height
     , buildBoard

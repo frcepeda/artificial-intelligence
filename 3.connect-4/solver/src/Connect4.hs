@@ -14,16 +14,18 @@ import Debug.Trace
 
 bestMove :: BoardState -> Experience -> Maybe Int
 bestMove b e
-    | isFull b = Nothing
-    | otherwise = traceShow (stateScore b) $ Just (negamax b h d)
+    | isOver b = Nothing
+    | otherwise = Just (negamax h d b)
         where h = heuristic e
               d = depth e
 
 heuristic _ = stateScore
-depth _ = 5
-scale = [0, 4^0, 4^1, 4^2, inf `div` (4^4)]
+depth Novice = 2
+depth Amateur = 3
+depth Expert = 4
+scale = [0, 4^0, 4^3, 4^6, 4^14]
 
-inf = 10^6 -- never forget
+inf = 2^30
 
 isFull :: BoardState -> Bool
 isFull BoardState{..} = all (== height grid) (elems top)
@@ -33,33 +35,35 @@ isFull BoardState{..} = all (== height grid) (elems top)
 It must satisfy the zero-sum property.
 (i.e. stateScore b = - stateScore b' where b
 and b' have opposite player fields.)
-Also, a winning position must award inf/2
-points to the winning player.
 -}
 stateScore :: BoardState -> Int
-stateScore BoardState{..} = sum $ concatMap subs [1..4]
-  where r = 6; c = 7 -- FIXME: don't hardcode
-        subs n = map score $ h ++ v ++ d1 ++ d2
-          where h  = go [0..r-1] [0..c-n]   (\a b d -> (a, b+d))
-                v  = go [0..r-n] [0..c-1]   (\a b d -> (a+d, b))
-                d1 = go [0..r-n] [0..c-n]   (\a b d -> (a+d, b+d))
-                d2 = go [0..r-n] [n-1..c-1] (\a b d -> (a+d, b-d))
-                go r c f = [ixmap (0,n-1) (f a b) grid
-                           | a <- r, b <- c]
-                score b
-                  | pl > 0 && op > 0 = 0
-                  | pl > 0 = scale !! n
-                  | op > 0 = - scale !! n
-                  | otherwise = 0
-                    where e = elems b
-                          pl = count (== Just player) e
-                          op = count (== Just (opponent player)) e
+stateScore BoardState{..} = sum . map score . subs grid $ 4
+  where score b
+          | pl > 0 && op > 0 = 0
+          | pl > 0 = scale !! pl
+          | op > 0 = - scale !! op
+          | otherwise = 0
+            where e = elems b
+                  pl = count (== Just player) e
+                  op = count (== Just (opponent player)) e
+
+subs grid n = h ++ v ++ d1 ++ d2
+  where h  = go [0..r-1] [0..c-n]   (\a b d -> (a, b+d))
+        v  = go [0..r-n] [0..c-1]   (\a b d -> (a+d, b))
+        d1 = go [0..r-n] [0..c-n]   (\a b d -> (a+d, b+d))
+        d2 = go [0..r-n] [n-1..c-1] (\a b d -> (a+d, b-d))
+        go r c f = [ixmap (0,n-1) (f a b) grid
+                   | a <- r, b <- c]
+        r = 6; c = 7 -- FIXME: don't hardcode
+
+isOver b@BoardState{..} = isFull b || any allEqual (subs grid 4)
+    where allEqual g = or $ all . (==) . Just <$> [A,B] <*> [elems g]
 
 {-| List all the possible new board
 states possible from the given one.
 -}
 moves :: BoardState -> [(Int, BoardState)]
-moves BoardState{..} = map (\i -> (snd i, move i)) valid
+moves BoardState{..} = map (\i -> (fst i, move i)) valid
     where valid = filter notFull (assocs top)
           notFull (_,z) = z < height grid
           move (i,z) = BoardState
@@ -68,14 +72,14 @@ moves BoardState{..} = map (\i -> (snd i, move i)) valid
                          , player = opponent player
                          }
 
-negamax :: BoardState -- ^ The starting state
-        -> (BoardState -> Int) -- ^ A heuristic
-        -> Int -- ^ Maximum allowed depth
+negamax :: (BoardState -> Int) -- ^ A heuristic
+        -> Int -- ^ Search depth
+        -> BoardState -- ^ The starting state
         -> Int -- ^ Best move
-negamax b h d = snd $ go d b (-inf,inf)
+negamax h d0 b0 = snd $ go d0 b0 (-inf,inf)
   where go d b (a0, beta)
-          | d == 0 || isFull b = (h b, undefined)
-          | otherwise = foldAlpha (-inf, undefined) (moves b)
+          | d == 0 || isOver b = (h b, -1)
+          | otherwise = foldAlpha (a0, -1) (moves b)
           where foldAlpha az [] = az
                 foldAlpha az@(al,_) ~((m,b'):ms)
                   | al > beta = az -- prune by alpha beta
@@ -85,5 +89,5 @@ negamax b h d = snd $ go d b (-inf,inf)
 
 count :: (a -> Bool) -> [a] -> Int
 count p xs = go xs 0
-    where go (x:xs) !z = go xs (z + (if p x then 0 else 1))
+    where go (x:xs) !z = go xs (z + (if p x then 1 else 0))
           go _ z = z
