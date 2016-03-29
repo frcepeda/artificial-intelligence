@@ -17,15 +17,15 @@ import Network.Wai.Handler.Warp
 import Network.HTTP.Types
 import qualified Data.ByteString.Lazy as B
 
-import Connect4
+import qualified Connect4 as C4
 
 data MoveRequest = MoveRequest
     { target :: Int
     , rows :: Int
     , cols :: Int
-    , grid :: [[Int]]
+    , grid :: [[Maybe Int]]
     , player :: Int
-    , experience :: Experience
+    , experience :: C4.Experience
     , token :: String
     } deriving (Generic, Show)
 
@@ -39,7 +39,7 @@ data ArgException = ArgException
 instance Exception ArgException
 
 instance FromJSON MoveRequest
-instance FromJSON Experience
+instance FromJSON C4.Experience
 instance ToJSON MoveResponse
 
 main = do
@@ -49,10 +49,18 @@ main = do
 handler req respond = do
     r <- catch (do
         body <- B.fromStrict <$> requestBody req
-        let Just state = decode body
-        print state
+
+        let state' = eitherDecode body
+        let Right state = state'
+
         unless (token state == "SEEKRITTOKEN") (throw ArgException)
-        return $ Just 0)
+
+        let board = C4.buildBoard (rows state, cols state)
+                                  (player state)
+                                  (grid state)
+
+        return $ C4.bestMove board (experience state)
+        )
                (\(e :: ArgException) -> return Nothing)
     respond $ responseLBS status200 origin (encode . MoveResponse $ r)
         where origin = [("Access-Control-Allow-Origin", "*")]

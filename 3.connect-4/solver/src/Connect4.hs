@@ -1,23 +1,27 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Connect4
     ( module Connect4.Types
     , bestMove
     ) where
 
+import Control.Applicative
 import Connect4.Types
 import Data.Array.IArray
+import Data.Maybe
+import Debug.Trace
 
 bestMove :: BoardState -> Experience -> Maybe Int
 bestMove b e
     | isFull b = Nothing
-    | otherwise = Just m
-        where (m,_) = negamax b h d
-              h = heuristic e
+    | otherwise = traceShow (stateScore b) $ Just (negamax b h d)
+        where h = heuristic e
               d = depth e
 
-heuristic _ = undefined
-depth _ = undefined
+heuristic _ = stateScore
+depth _ = 5
+scale = [0, 4^0, 4^1, 4^2, inf `div` (4^4)]
 
 inf = 10^6 -- never forget
 
@@ -33,14 +37,29 @@ Also, a winning position must award inf/2
 points to the winning player.
 -}
 stateScore :: BoardState -> Int
-stateScore b = undefined
-
+stateScore BoardState{..} = sum $ concatMap subs [1..4]
+  where r = 6; c = 7 -- FIXME: don't hardcode
+        subs n = map score $ h ++ v ++ d1 ++ d2
+          where h  = go [0..r-1] [0..c-n]   (\a b d -> (a, b+d))
+                v  = go [0..r-n] [0..c-1]   (\a b d -> (a+d, b))
+                d1 = go [0..r-n] [0..c-n]   (\a b d -> (a+d, b+d))
+                d2 = go [0..r-n] [n-1..c-1] (\a b d -> (a+d, b-d))
+                go r c f = [ixmap (0,n-1) (f a b) grid
+                           | a <- r, b <- c]
+                score b
+                  | pl > 0 && op > 0 = 0
+                  | pl > 0 = scale !! n
+                  | op > 0 = - scale !! n
+                  | otherwise = 0
+                    where e = elems b
+                          pl = count (== Just player) e
+                          op = count (== Just (opponent player)) e
 
 {-| List all the possible new board
 states possible from the given one.
 -}
 moves :: BoardState -> [(Int, BoardState)]
-moves BoardState{..} = map (\i -> (fst i, move i)) valid
+moves BoardState{..} = map (\i -> (snd i, move i)) valid
     where valid = filter notFull (assocs top)
           notFull (_,z) = z < height grid
           move (i,z) = BoardState
@@ -52,13 +71,19 @@ moves BoardState{..} = map (\i -> (fst i, move i)) valid
 negamax :: BoardState -- ^ The starting state
         -> (BoardState -> Int) -- ^ A heuristic
         -> Int -- ^ Maximum allowed depth
-        -> (Int, Int) -- ^ (Best move, score)
-negamax b h d = go d b (-inf,inf)
-  where go d b (a0,beta)
-          | d == 0 || isFull b = (undefined, h b)
-          | otherwise = foldAlpha (a0,undefined) (moves b)
-          where foldAlpha az@(al,_) ((m,b'):ms)
+        -> Int -- ^ Best move
+negamax b h d = snd $ go d b (-inf,inf)
+  where go d b (a0, beta)
+          | d == 0 || isFull b = (h b, undefined)
+          | otherwise = foldAlpha (-inf, undefined) (moves b)
+          where foldAlpha az [] = az
+                foldAlpha az@(al,_) ~((m,b'):ms)
                   | al > beta = az -- prune by alpha beta
                   | otherwise = foldAlpha (max az bz) ms
-                    where (_,r) = go (d-1) b' (-beta,-al)
-                          bz = (m, -r)
+                    where (r,_) = go (d-1) b' (-beta,-al)
+                          bz = (-r, m)
+
+count :: (a -> Bool) -> [a] -> Int
+count p xs = go xs 0
+    where go (x:xs) !z = go xs (z + (if p x then 0 else 1))
+          go _ z = z
