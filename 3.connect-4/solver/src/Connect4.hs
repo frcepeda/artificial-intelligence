@@ -7,7 +7,9 @@ module Connect4
     ) where
 
 import Control.Applicative
+import Control.Monad
 import Connect4.Types
+import Data.Monoid
 import Data.Array.IArray
 import Data.Maybe
 import Debug.Trace
@@ -32,22 +34,22 @@ isFull BoardState{..} = all (== height grid) (elems top)
 
 
 {-| The heuristic score for a state.
-It must satisfy the zero-sum property.
-(i.e. stateScore b = - stateScore b' where b
-and b' have opposite player fields.)
 -}
 stateScore :: BoardState -> Int
-stateScore BoardState{..} = sum . map score . subs grid $ 4
+stateScore b@BoardState{..}
+    | Just w <- winner b = if w == player then inf else -inf
+    | otherwise = sum . zipWith (*) [7, 7, 4, 4]
+                      . map (sum . map score)
+                      . subs grid $ 4
   where score b
-          | pl > 0 && op > 0 = 0
-          | pl > 0 = scale !! pl
-          | op > 0 = - scale !! op
+          | pl == 3 && op == 0 = 1
+          | op == 3 && pl == 0 = -1
           | otherwise = 0
             where e = elems b
                   pl = count (== Just player) e
                   op = count (== Just (opponent player)) e
 
-subs grid n = h ++ v ++ d1 ++ d2
+subs grid n = [h, v, d1, d2]
   where h  = go [0..r-1] [0..c-n]   (\a b d -> (a, b+d))
         v  = go [0..r-n] [0..c-1]   (\a b d -> (a+d, b))
         d1 = go [0..r-n] [0..c-n]   (\a b d -> (a+d, b+d))
@@ -56,8 +58,14 @@ subs grid n = h ++ v ++ d1 ++ d2
                    | a <- r, b <- c]
         r = 6; c = 7 -- FIXME: don't hardcode
 
-isOver b@BoardState{..} = isFull b || any allEqual (subs grid 4)
-    where allEqual g = or $ all . (==) . Just <$> [A,B] <*> [elems g]
+isOver b = isFull b || isJust (winner b)
+
+winner BoardState{..} = getFirst . mconcat . map toWinner $ concat (subs grid 4)
+    where toWinner g = First $ do
+            let gs = elems g
+            a <- head gs
+            guard $ all (== Just a) gs
+            return a
 
 {-| List all the possible new board
 states possible from the given one.
@@ -79,11 +87,11 @@ negamax :: (BoardState -> Int) -- ^ A heuristic
 negamax h d0 b0 = snd $ go d0 b0 (-inf,inf)
   where go d b (a0, beta)
           | d == 0 || isOver b = (h b, -1)
-          | otherwise = foldAlpha (a0, -1) (moves b)
-          where foldAlpha az [] = az
-                foldAlpha az@(al,_) ~((m,b'):ms)
-                  | al > beta = az -- prune by alpha beta
-                  | otherwise = foldAlpha (max az bz) ms
+          | otherwise = foldAlpha a0 (-inf,-1) (moves b)
+          where foldAlpha al best [] = best
+                foldAlpha al best ~((m,b'):ms)
+                  | al > beta = best -- prune by alpha beta
+                  | otherwise = foldAlpha (max al (-r)) (max best bz) ms
                     where (r,_) = go (d-1) b' (-beta,-al)
                           bz = (-r, m)
 
