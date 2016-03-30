@@ -24,8 +24,8 @@ bestMove b e
 heuristic _ = stateScore
 depth Novice = 2
 depth Amateur = 3
-depth Expert = 4
-scale = [0, 4^0, 4^3, 4^6, 4^14]
+depth Expert = 5
+scale = [0, 1, 4, 16]
 
 inf = 2^30
 
@@ -38,12 +38,13 @@ isFull BoardState{..} = all (== height grid) (elems top)
 stateScore :: BoardState -> Int
 stateScore b@BoardState{..}
     | Just w <- winner b = if w == player then inf else -inf
-    | otherwise = sum . zipWith (*) [7, 7, 4, 4]
+    | otherwise = sum . zipWith (*) [2,2,1,1]
                       . map (sum . map score)
                       . subs grid $ 4
   where score b
-          | pl == 3 && op == 0 = 1
-          | op == 3 && pl == 0 = -1
+          | pl > 0 && op > 0 = 0
+          | pl > 0 = scale !! pl
+          | op > 0 = - scale !! op
           | otherwise = 0
             where e = elems b
                   pl = count (== Just player) e
