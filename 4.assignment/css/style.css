@@ -1,0 +1,34 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+#page-wrapper {
+  height: 100%;
+  position: relative;
+}
+
+#control-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 500px;
+  height: 100%;
+}
+
+#input-box {
+  width: 400px;
+  height: 600px;
+}
+
+#graph-container {
+  margin-left: 500px;
+  background: black;
+  min-height: 100%;
+  padding: 0px;
+  border: 0px;
+  position: relative;
+}
