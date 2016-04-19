@@ -145,7 +145,7 @@ $(document).ready(function (){
 				id: i,
 				label: input.nodes[i],
 				x: 100 * Math.cos(2 * i * Math.PI / N),
-				y: 100 * Math.sin(2 * i * Math.PI / N),
+				y: -100 * Math.sin(2 * i * Math.PI / N),
 				size: 5,
 				color: colors[group[i]]
 			});
