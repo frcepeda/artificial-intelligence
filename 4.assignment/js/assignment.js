@@ -1,13 +1,21 @@
-function assign(graph, params){
-	var N = graph.length;
-	var closure = [];
+function assign(graph){
+	var N = graph.nodes.length;
+	var matrix = [], closure = [];
 
 	for (var i = 0; i < N; i++){
 		var w = [];
 		for (var j = 0; j < N; j++)
-			w.push(graph[i][j]);
-		closure.push(w);
+			w.push(0);
+		matrix.push(w);
 	}
+
+	for (var i = 0; i < graph.edges.length; i++){
+		var edge = graph.edges[i];
+		matrix[edge.source][edge.target] = 1;
+	}
+
+	for (var i = 0; i < N; i++)
+		closure.push(matrix[i].slice());
 
 	for (var i = 0; i < N; i++)
 		for (var j = 0; j < N; j++)
@@ -40,9 +48,9 @@ function assign(graph, params){
 		if (m == null) return null;
 
 		for (var i = 0; true; i++){
-			if (blocked.indexOf(i) != -1) continue;
+			if (blocked[m].indexOf(i) != -1) continue;
 			while (cnt.length <= i) cnt.push(0);
-			if (cnt[i] >= params.maxCnt) continue;
+			if (cnt[i] >= graph.config.maxCnt) continue;
 			cnt[i]++;
 			assignment[m] = i;
 			break;
@@ -50,8 +58,9 @@ function assign(graph, params){
 
 		
 		for (var i = 0; i < N; i++)
-			if (closure[m][i])
-				v[i]--;
+			if (matrix[m][i] &&
+			    blocked[i].indexOf(assignment[m]) == -1)
+				blocked[i].push(assignment[m]);
 
 		for (var i = 0; i < N; i++)
 			if (closure[m][i])
@@ -77,27 +86,80 @@ var colors = [
 "#5B4534", "#FDE8DC", "#404E55", "#0089A3", "#CB7E98", "#A4E804", "#324E72", "#6A3A4C",
 ];
 
+function Tokenizer(s){
+	this.tokens = s.split(/\s+/);
+}
+
+Tokenizer.prototype.next = function (){
+	return this.tokens.shift();
+}
+
+Tokenizer.prototype.nextInt = function (){
+	return parseInt(this.tokens.shift(), 10);
+}
+
+function parseInput(){
+	var nodes = [], edges = [], ids = {}, config = {};
+
+	console.log($('#input-box').val());
+	var input = new Tokenizer($('#input-box').val());
+
+	var N = input.nextInt();
+	var M = input.nextInt();
+	config.maxCnt = input.nextInt();
+
+	for (var i = 0; i < N; i++){
+		var id = input.next();
+		nodes.push(id);
+		ids[id] = i;
+	}
+
+	for (var i = 0; i < M; i++){
+		var source = input.next();
+		var target = input.next();
+		edges.push({
+			source: ids[source],
+			target: ids[target]
+		});
+	}
+
+	return { nodes: nodes, edges: edges, config: config };
+}
+
 $(document).ready(function (){
 	var s;
 
 	$('#assign').click(function(){
-		var N = 10;
+		if (s != null) s.kill();
+
+		var input = parseInput();
+
 		var nodes = [], edges = [], matrix = [];
 
-		if (s != null) s.kill();
+		var group = assign(input);
+
+		var N = input.nodes.length;
 
 		for (var i = 0; i < N; i++){
 			nodes.push({
 				id: i,
-				label: i,
+				label: input.nodes[i],
 				x: 100 * Math.cos(2 * i * Math.PI / N),
 				y: 100 * Math.sin(2 * i * Math.PI / N),
 				size: 5,
-				color: colors[i]
+				color: colors[group[i]]
 			});
 		}
 
-		edges.push({id:0, source:0, target:1});
+		for (var i = 0; i < input.edges.length; i++){
+			var edge = input.edges[i];
+
+			edges.push({
+				id: i,
+				source: edge.source,
+				target: edge.target
+			});
+		}
 
 		var data = { nodes: nodes, edges: edges };
 
