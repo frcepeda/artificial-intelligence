@@ -281,7 +281,7 @@ $(document).ready(function (){
 
 			$.post({
 				type: "POST",
-				url: "http://ssh.freddy.mx:9593",
+				url: "http://ssh.freddy.mx/connect4/move",
 				data: JSON.stringify(payload),
 				success: function(data){
 					var r = JSON.parse(data);
