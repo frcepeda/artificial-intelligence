@@ -20,10 +20,11 @@ for c = 2:size(m,2)
 
 	for row = m'
 		attr = row(c);
+		row(c) = [];
 		subs{c,attr} = [subs{c,attr}; row'];
 	end
 
-	h = condEntropy(subs{c}, sizes(c));
+	h = condEntropy(subs(c,:));
 
 	if (h < best(2))
 		best = [c h];
@@ -44,6 +45,7 @@ for attr = 1:sizes(col)
 	end;
 
 	if (isequal(m,go))
+		m
 		error('Can''t split the data set!');
 	end
 
