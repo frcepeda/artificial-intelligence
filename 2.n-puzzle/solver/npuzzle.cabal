@@ -20,7 +20,7 @@ library
   ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >= 4.7 && < 5, vector, pqueue,
                        transformers, containers, primitive,
-                       bytestring
+                       bytestring, repa
 
 executable npuzzle-exe
   hs-source-dirs:      app
