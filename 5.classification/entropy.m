@@ -17,5 +17,5 @@ n = size(classes,2);
 
 for x=freqs
 	p = x / n;
-	h -= p * log2(p);
+	h = h - p * log2(p);
 end

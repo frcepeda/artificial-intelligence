@@ -1,0 +1,4 @@
+#/usr/bin/env bash
+octave main.m > decisionTree.dot
+dot -Tpng decisionTree.dot -odecisionTree.png
+xdg-open decisionTree.png &> /dev/null &

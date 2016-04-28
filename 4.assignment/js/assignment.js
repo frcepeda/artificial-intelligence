@@ -17,11 +17,11 @@ function assign(graph){
 	for (var i = 0; i < N; i++)
 		closure.push(matrix[i].slice());
 
-	for (var i = 0; i < N; i++)
-		for (var j = 0; j < N; j++)
-			for (var k = 0; k < N; k++)
+	for (var k = 0; k < N; k++)
+		for (var i = 0; i < N; i++)
+			for (var j = 0; j < N; j++)
 				closure[i][j] = closure[i][j] ||
-				                (closure[i][k] && closure[k][j]);
+				                (closure[i][k] * closure[k][j]);
 
 	var v = [], blocked = [], assignment = [];
 	for (var i = 0; i < N; i++){
@@ -55,16 +55,14 @@ function assign(graph){
 			assignment[m] = i;
 			break;
 		}
-
 		
 		for (var i = 0; i < N; i++)
-			if (matrix[m][i] &&
-			    blocked[i].indexOf(assignment[m]) == -1)
-				blocked[i].push(assignment[m]);
-
-		for (var i = 0; i < N; i++)
-			if (closure[m][i])
+			if (closure[m][i]){
 				v[i]--;
+				
+			    if (blocked[i].indexOf(assignment[m]) == -1)
+					blocked[i].push(assignment[m]);
+			}
 	}
 
 	return assignment;
@@ -144,10 +142,10 @@ $(document).ready(function (){
 			nodes.push({
 				id: i,
 				label: input.nodes[i],
-				x: 100 * Math.cos(2 * i * Math.PI / N),
-				y: -100 * Math.sin(2 * i * Math.PI / N),
-				size: 5,
-				color: colors[group[i]]
+				x: 1 * Math.cos(2 * i * Math.PI / N),
+				y: -1 * Math.sin(2 * i * Math.PI / N),
+				color: colors[group[i]],
+				size: 10
 			});
 		}
 
@@ -172,5 +170,7 @@ $(document).ready(function (){
 				defaultEdgeType: 'arrow'
 			}
 		});
+		
+		sigma.plugins.dragNodes(s, s.renderers[0]);
 	});
 });
