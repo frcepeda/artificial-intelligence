@@ -209,7 +209,7 @@ $(function (){
 
 			$.post({
 				type: "POST",
-				url: "http://ssh.freddy.mx:9592",
+				url: "http://ssh.freddy.mx/n-puzzle/solve",
 				data: JSON.stringify(payload),
 				success: function(data){
 					var r = JSON.parse(data);

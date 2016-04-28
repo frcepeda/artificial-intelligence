@@ -1,0 +1,2 @@
+#!/usr/bin/env zsh
+stack build --executable-profiling --library-profiling --ghc-options="-fprof-auto -rtsopts" && /usr/bin/time stack exec -- preprocessing +RTS -p

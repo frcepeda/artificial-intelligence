@@ -1,0 +1,2 @@
+#!/usr/bin/env zsh
+stack exec connect4-exe
