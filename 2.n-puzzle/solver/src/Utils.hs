@@ -20,7 +20,7 @@ import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as VM
 
 foreign import ccall "permutation.h pnum"
-    c_pnum :: Int -> Int -> Ptr Int -> IO Int
+    c_pnum :: Ptr Int -> IO Int
 
 factorial :: Int -> Int
 factorial n = v V.! n
@@ -30,5 +30,10 @@ mapSnd f (a,b) = (a, f b)
 
 indices xs ys = map (\x -> fromJust . elemIndex x $ ys) xs
 
-permutationNumber :: Int -> Int -> [Int] -> Int
-permutationNumber n k xs = unsafePerformIO $ withArray xs (c_pnum n k)
+buffer :: Ptr Int
+buffer = unsafePerformIO $ mallocArray 8
+
+permutationNumber :: [Int] -> Int
+permutationNumber xs = unsafePerformIO $ do
+    pokeArray buffer xs
+    c_pnum buffer

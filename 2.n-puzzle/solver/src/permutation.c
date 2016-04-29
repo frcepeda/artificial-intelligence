@@ -5,8 +5,8 @@
 
 typedef long long ll;
 
-ll pnum(ll n, ll k, ll *a){
-	int b = 0, len = k, i;
+ll pnum(ll *a){
+	register int b = 0, n = 16, k = 8, i;
 	ll r = 0;
 	static ll f[FLIM] = {1};
 
@@ -14,11 +14,12 @@ ll pnum(ll n, ll k, ll *a){
 		for (i = 1; i < FLIM; i++)
 			f[i] = f[i-1] * i;
 
-	for (i = 0; i < len; i++){
-		int me = a[i] - __builtin_popcount(b & ((1<<a[i])-1));
+	for (i = 0; k; i++){
+		register int ai = a[i];
+		register int me = ai - __builtin_popcount(b & ((1<<ai)-1));
 		n--, k--;
 		r += f[n] / f[n-k] * me;
-		b |= 1 << a[i];
+		b |= 1 << ai;
 	}
 
 	return r;

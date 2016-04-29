@@ -144,7 +144,7 @@ dbSize = factorial 16 `div` factorial 8
 patternDB g = bfs 4 g
 
 patternID :: GoalPattern -> Puzzle -> Int
-patternID g p = permutationNumber 16 8 nums
+patternID g p = permutationNumber nums
     where perm = fromPuzzle 4 p
           nums = indices (markers g) perm
 
