@@ -42,9 +42,6 @@ instance FromJSON PuzzleRequest
 instance ToJSON PuzzleSolution
 
 main = do
-    putStrLn "Loading Permutation Cache..."
-    permutationCache `seq` putStrLn "Ready!"
-
     putStrLn "Loading Pattern Database..."
     fdb <- decodeWord8Vector <$> B.readFile "fringeDB"
     cdb <- decodeWord8Vector <$> B.readFile "cornerDB"

@@ -5,7 +5,6 @@ module Lib
     , patternDB
     , fringe
     , corner
-    , permutationCache
     ) where
 
 import Utils
