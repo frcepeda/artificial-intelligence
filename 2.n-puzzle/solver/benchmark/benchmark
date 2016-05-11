@@ -1,0 +1,8 @@
+#/bin/bash
+
+TIMEFORMAT='%3lR'
+
+for p in `cat permutations`
+do
+time curl -s 'http://localhost:9592' --data '{"size":4,"permutation":['$p'],"target":null,"token":"SEEKRITTOKEN"}' -w '\n' > /dev/null
+done

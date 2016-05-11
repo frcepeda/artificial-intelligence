@@ -1,0 +1,13 @@
+To run, install Stack (haskellstack.org) and then run `stack build`
+in the solver directory.
+
+To generate the pattern databases, run `stack exec preprocessing`.
+This will create one of the two pattern databases. (It'll take
+a /long/ time, around 10 hours.) To create the second database,
+edit app/Preprocessing.hs and run `stack build` and
+`stack exec preprocessing` again.
+
+When both are ready, cd into the solver directory and run ./runsolver.
+
+Make sure to make the UI javascript point to localhost:9592 instead
+of ssh.freddy.mx.

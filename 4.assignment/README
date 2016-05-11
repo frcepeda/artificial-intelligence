@@ -1,0 +1,18 @@
+This project is self contained. Simply open index.html with your browser.
+
+The input format is
+
+V E A
+id1
+id2
+...
+idE
+idx idy
+idz idw
+...
+
+where V is the number of vertices, E the number of edges, and A
+the allowed vertices per color. On the next V lines, input a string
+to identify the nodes uniquely. Then, on the following E lines,
+two space separated ids represent a directed edge from the vertex
+on the left to the vertex on the right.

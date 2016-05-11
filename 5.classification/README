@@ -1,0 +1,8 @@
+Run ./splitDataset to split the dataset contained in dataset.dat using ID3.
+
+The dataset in dataset.dat must be a /numeric/ matrix where every row represents
+an instance. For each row, the first column represents the class of the instance,
+while the other rows represent its attributes.
+
+The classes and attributes must all be positive integers, preferably small.
+The included dataset.dat file gives an example.

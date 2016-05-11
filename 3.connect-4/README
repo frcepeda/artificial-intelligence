@@ -1,0 +1,7 @@
+To run, install Stack (haskellstack.org) and then run `stack build`
+in the solver directory.
+
+To start, run ./runsolver.
+
+Make sure to make the UI javascript point to localhost:9593 instead
+of ssh.freddy.mx.
