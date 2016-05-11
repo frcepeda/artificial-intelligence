@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ForeignFunctionInterface #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Utils
     ( factorial
@@ -7,20 +7,13 @@ module Utils
     , indices
     ) where
 
-import Foreign
-import Foreign.Ptr
-import Foreign.Marshal.Utils
 import Data.Bits
 import Data.List
 import Data.Maybe
 import Control.Monad
 import Control.Monad.ST
-import System.IO.Unsafe
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as VM
-
-foreign import ccall "permutation.h pnum"
-    c_pnum :: Ptr Int -> IO Int
 
 factorial :: Int -> Int
 factorial n = v V.! n
@@ -30,10 +23,13 @@ mapSnd f (a,b) = (a, f b)
 
 indices xs ys = map (\x -> fromJust . elemIndex x $ ys) xs
 
-buffer :: Ptr Int
-buffer = unsafePerformIO $ mallocArray 8
+permutationNumber :: Int -> Int -> [Int] -> Int
+permutationNumber n k xs = p' n k (0 :: Int) 0 xs
+    where p' _ _ _ a [] = a
+          p' n k b !a (x:xs) = p' (n-1) (k-1) b' (a + this) xs
+            where this = (factorial (n-1) `div` factorial (n-1-(k-1))) * me
+                  me = x - popCount (b .&. mask)
+                  mask = (1 `unsafeShiftL` x) - 1
+                  b' = b `setBit` x
 
-permutationNumber :: [Int] -> Int
-permutationNumber xs = unsafePerformIO $ do
-    pokeArray buffer xs
-    c_pnum buffer
+count p = foldl' (\a x -> a + (if p x then 1 else 0)) 0

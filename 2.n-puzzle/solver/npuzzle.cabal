@@ -18,8 +18,6 @@ library
   exposed-modules:     Lib, Serializer
   other-modules:       Utils, Queue
   ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
-  includes:            src/permutation.h
-  c-sources:           src/permutation.c
   build-depends:       base >= 4.7 && < 5, vector, pqueue,
                        transformers, containers, primitive,
                        bytestring
